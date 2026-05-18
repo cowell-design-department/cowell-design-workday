@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>設計部 工作日報</title>
+<style>
+  :root {
+    --c-primary:#1f4e79;
+    --c-accent:#ed7d31;
+    --c-soft:#f4f6f9;
+    --c-line:#d8dee6;
+    --c-done:#70ad47;
+    --c-warn:#c00000;
+    --c-text:#222;
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+    color:var(--c-text);
+    margin:0; padding:0;
+    background:#fafbfc;
+    line-height:1.7;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding:32px 28px 80px; }
+  .page-nav {
+    display:flex; gap:6px; margin-bottom:18px;
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:10px; padding:6px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+    flex-wrap:wrap;
+  }
+  .page-nav a {
+    flex:1 1 0; text-align:center; min-width:120px;
+    padding:10px 16px; border-radius:7px;
+    font-size:14px; font-weight:600;
+    color:var(--c-primary);
+    transition:background .2s, color .2s, box-shadow .2s;
+  }
+  .page-nav a:hover { background:var(--c-soft); text-decoration:none; }
+  .page-nav a.active {
+    background:linear-gradient(120deg,var(--c-primary),#2c6ea8);
+    color:#fff;
+    box-shadow:0 2px 6px rgba(31,78,121,.25);
+  }
+  .page-nav a.active:hover { background:linear-gradient(120deg,var(--c-primary),#2c6ea8); }
+  header {
+    background:linear-gradient(120deg,var(--c-primary),#2c6ea8);
+    color:#fff; padding:28px 28px 22px;
+    border-radius:10px;
+    box-shadow:0 4px 18px rgba(31,78,121,.18);
+    margin-bottom:30px;
+  }
+  header h1 { margin:0 0 6px; font-size:26px; letter-spacing:1px; }
+  header .meta { font-size:13px; opacity:.9; }
+  h2 {
+    font-size:20px; color:var(--c-primary);
+    border-left:6px solid var(--c-accent);
+    padding:6px 0 6px 14px;
+    margin:34px 0 14px;
+  }
+  h3 { font-size:16px; color:#2c6ea8; margin:18px 0 8px; }
+  table {
+    width:100%; border-collapse:collapse; margin:10px 0 16px;
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:6px; overflow:hidden;
+    font-size:14.5px;
+  }
+  th, td { padding:9px 12px; border-bottom:1px solid var(--c-line); text-align:left; vertical-align:top; }
+  th { background:var(--c-soft); color:var(--c-primary); font-weight:600; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:#fbfcfe; }
+  .note {
+    background:#fff8ec; border-left:4px solid var(--c-accent);
+    padding:10px 14px; border-radius:4px; font-size:14px;
+    margin:10px 0;
+  }
+  .daily-tip {
+    font-size:12.5px; color:#666; margin:4px 0 14px;
+  }
+  .workday-table {
+    table-layout:fixed; font-size:12.5px;
+    border:1px solid #2b2b2b;
+  }
+  .workday-table th, .workday-table td {
+    padding:6px 6px;
+    word-break:break-word; white-space:normal;
+    vertical-align:middle;
+    border-right:1px solid #c8ced6;
+    border-bottom:1px solid #c8ced6;
+  }
+  .workday-table th:last-child, .workday-table td:last-child { border-right:none; }
+  .workday-table thead th {
+    background:#2b2b2b; color:#fff;
+    font-size:12px; line-height:1.35; text-align:center;
+    border-right:1px solid #555;
+    border-bottom:1px solid #2b2b2b;
+  }
+  .workday-table thead th:last-child { border-right:none; }
+  .workday-table td { min-height:30px; }
+  .workday-table colgroup col.c-case   { width:10%; }
+  .workday-table colgroup col.c-type   { width:6%; }
+  .workday-table colgroup col.c-date   { width:7.5%; }
+  .workday-table colgroup col.c-hour   { width:6%; }
+  .workday-table colgroup col.c-plugin { width:6%; }
+  .workday-table colgroup col.c-prog   { width:6%; }
+  .workday-table colgroup col.c-note   { width:14%; }
+  .workday-table tr.category-row td {
+    color:#fff; font-weight:700; font-size:14px;
+    padding:8px 12px;
+    text-align:left;
+    border-right:1px solid rgba(255,255,255,.25);
+    border-bottom:1px solid #c8ced6;
+  }
+  .workday-table tr.category-row td:last-child { border-right:none; }
+  .workday-table tr.cat-meeting  td { background:#e89c3c; }
+  .workday-table tr.cat-service  td { background:#d75b5b; }
+  .workday-table tr.cat-web      td { background:#1f4486; }
+  .workday-table tr.cat-project  td { background:#26195e; }
+  .workday-table tr.cat-internal td { background:#4a78d8; }
+  .workday-table tr.cat-pending  td { background:#9a9a9a; }
+  .workday-table tbody tr.blank td { height:30px; background:#fff; }
+  .workday-table tbody tr.blank:hover td { background:#fbfcfe; }
+  a { color:var(--c-primary); text-decoration:none; word-break:break-all; }
+  a:hover { text-decoration:underline; }
+  .toc {
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:8px; padding:14px 18px; margin-bottom:24px;
+  }
+  .toc ol { padding-left:22px; margin:6px 0; columns:2; -webkit-columns:2; }
+  .toc li { margin-bottom:3px; font-size:14px; }
+  @media (max-width:720px) {
+    .toc ol { columns:1; }
+    header h1 { font-size:21px; }
+  }
+  @media print {
+    body { background:#fff; }
+    header { box-shadow:none; }
+    table { box-shadow:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="page-nav" aria-label="分頁選單">
+  <a href="Design_Department.html">案件安排</a>
+  <a href="Workday.html" class="active">工作日報</a>
+  <a href="reward.html">獎金</a>
+  <a href="other.html">其他</a>
+  <a href="Static_Pages.html">靜態頁</a>
+  <a href="Jimmy.html">Jimmy</a>
+  <a href="Joey.html">Joey</a>
+  <a href="Cat.html">Cat</a>
+  <a href="阿柯.html">阿柯</a>
+</nav>
+
+<header>
+  <h1>設計部 工作日報</h1>
+  <div class="meta">範本來源：工作日報.xlsx（工作表：20250602） ｜ 空白填寫範本</div>
+</header>
+
+<section class="toc" id="toc">
+  <strong>目錄</strong>
+  <ol>
+    <li><a href="#s1">會議</a></li>
+    <li><a href="#s2">前台客服</a></li>
+    <li><a href="#s3">網站建置</a></li>
+    <li><a href="#s4">專案</a></li>
+    <li><a href="#s5">內部協助</a></li>
+    <li><a href="#s6">待處理項目</a></li>
+  </ol>
+</section>
+
+<p class="daily-tip">欄位定義：案件名稱 ・ 性質（如：直派/聯合/內部…） ・ 派案日期 ・ 預定完成日期 ・ 開始製作日期 ・ 實際完成日期 ・ 預計總工時 ・ 今日工時 ・ 插件 ・ 進度（%） ・ 進度說明。</p>
+
+<table class="workday-table">
+  <colgroup>
+    <col class="c-case">
+    <col class="c-type">
+    <col class="c-date">
+    <col class="c-date">
+    <col class="c-date">
+    <col class="c-date">
+    <col class="c-hour">
+    <col class="c-hour">
+    <col class="c-plugin">
+    <col class="c-prog">
+    <col class="c-note">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>案件</th><th>性質</th><th>派案日期</th><th>預定完成日期</th><th>開始製作日期</th>
+      <th>實際完成日期</th><th>預計總工時</th><th>今日工時</th><th>插件</th><th>進度</th><th>進度說明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="category-row cat-meeting" id="s1"><td colspan="11">會議</td></tr>
+    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+
+    <tr class="category-row cat-service" id="s2"><td colspan="11">前台客服</td></tr>
+    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+
+    <tr class="category-row cat-web" id="s3"><td colspan="11">網站建置</td></tr>
+    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+
+    <tr class="category-row cat-project" id="s4"><td colspan="11">專案</td></tr>
+    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+
+    <tr class="category-row cat-internal" id="s5"><td colspan="11">內部協助</td></tr>
+    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+
+    <tr class="category-row cat-pending" id="s6"><td colspan="11">待處理項目</td></tr>
+    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  </tbody>
+</table>
+
+<p style="text-align:center;color:#888;font-size:12px;margin-top:40px;">— 工作日報 ・由 Design_Department.html 拆分 ・範本來源：工作日報.xlsx —</p>
+
+</div>
+</body>
+</html>

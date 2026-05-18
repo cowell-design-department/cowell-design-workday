@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Joey 工作日報</title>
+<style>
+  :root {
+    --c-primary:#1f4e79;
+    --c-accent:#ed7d31;
+    --c-soft:#f4f6f9;
+    --c-line:#d8dee6;
+    --c-done:#70ad47;
+    --c-warn:#c00000;
+    --c-text:#222;
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+    color:var(--c-text); margin:0; padding:0;
+    background:#fafbfc; line-height:1.7;
+  }
+  .wrap { max-width:1280px; margin:0 auto; padding:24px 20px 80px; }
+  a { color:var(--c-primary); text-decoration:none; word-break:break-all; }
+  a:hover { text-decoration:underline; }
+  .page-nav {
+    display:flex; gap:6px; margin-bottom:14px;
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:10px; padding:6px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+    flex-wrap:wrap;
+  }
+  .page-nav a {
+    flex:1 1 0; text-align:center; min-width:90px;
+    padding:9px 14px; border-radius:7px;
+    font-size:13.5px; font-weight:600;
+    color:var(--c-primary);
+    transition:background .2s,color .2s,box-shadow .2s;
+  }
+  .page-nav a:hover { background:var(--c-soft); text-decoration:none; }
+  .page-nav a.active {
+    background:linear-gradient(120deg,var(--c-primary),#2c6ea8);
+    color:#fff; box-shadow:0 2px 6px rgba(31,78,121,.25);
+  }
+  header {
+    background:linear-gradient(120deg,var(--c-primary),#2c6ea8);
+    color:#fff; padding:24px 28px 20px;
+    border-radius:10px;
+    box-shadow:0 4px 18px rgba(31,78,121,.18);
+    margin-bottom:18px;
+    display:flex; justify-content:space-between; align-items:center;
+    flex-wrap:wrap; gap:14px;
+  }
+  header h1 { margin:0 0 4px; font-size:24px; letter-spacing:1px; }
+  header .meta { font-size:13px; opacity:.9; }
+  header .author-tag {
+    background:rgba(255,255,255,.18); padding:5px 14px;
+    border-radius:20px; font-size:14px; font-weight:600;
+  }
+  /* sync bar */
+  .sync-bar {
+    display:flex; justify-content:space-between; align-items:center;
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:8px; padding:8px 14px; margin-bottom:18px;
+    font-size:13px; flex-wrap:wrap; gap:10px;
+  }
+  .sync-bar .status[data-level="ok"]   { color:#137333; }
+  .sync-bar .status[data-level="busy"] { color:#92400e; }
+  .sync-bar .status[data-level="err"]  { color:#b42318; }
+  .sync-bar .status[data-level="info"] { color:#475569; }
+  .sync-bar .btns { display:flex; gap:6px; flex-wrap:wrap; }
+  .btn {
+    border:1px solid var(--c-line); background:#fff;
+    padding:6px 12px; border-radius:6px; font-size:13px;
+    cursor:pointer; color:var(--c-text);
+    transition:background .15s,border-color .15s;
+  }
+  .btn:hover { background:var(--c-soft); }
+  .btn.primary { background:var(--c-primary); border-color:var(--c-primary); color:#fff; }
+  .btn.primary:hover { background:#16395a; }
+  .btn.accent  { background:var(--c-accent); border-color:var(--c-accent); color:#fff; }
+  .btn.accent:hover  { background:#c25d18; }
+  .btn.success { background:var(--c-done);   border-color:var(--c-done);   color:#fff; }
+  .btn.success:hover { background:#56872f; }
+  .btn.danger  { background:var(--c-warn);   border-color:var(--c-warn);   color:#fff; }
+  .btn.danger:hover  { background:#8d0000; }
+  .btn[disabled] { opacity:.45; cursor:not-allowed; }
+
+  /* section card */
+  .card {
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:10px; padding:18px 20px; margin-bottom:20px;
+    box-shadow:0 2px 8px rgba(15,23,42,.04);
+  }
+  .card h2 {
+    font-size:18px; margin:0 0 14px;
+    color:var(--c-primary);
+    border-left:5px solid var(--c-accent);
+    padding:4px 0 4px 12px;
+    display:flex; justify-content:space-between; align-items:center;
+    flex-wrap:wrap; gap:10px;
+  }
+  .status-badge {
+    display:inline-block; padding:3px 10px; border-radius:12px;
+    font-size:12px; font-weight:600; letter-spacing:.5px;
+  }
+  .status-badge.draft     { background:#fff8ec; color:#92400e; border:1px solid #f5d99a; }
+  .status-badge.submitted { background:#e8f5e9; color:#137333; border:1px solid #b6dcb9; }
+  .status-badge.empty     { background:#f0f1f3; color:#64748b; border:1px solid #d8dee6; }
+
+  /* workday table */
+  table.wd {
+    width:100%; border-collapse:collapse;
+    background:#fff; border:1px solid #2b2b2b;
+    font-size:12.5px; table-layout:fixed;
+  }
+  table.wd th, table.wd td {
+    padding:6px 6px; border-right:1px solid #c8ced6; border-bottom:1px solid #c8ced6;
+    word-break:break-word; white-space:normal; vertical-align:middle;
+  }
+  table.wd th:last-child, table.wd td:last-child { border-right:none; }
+  table.wd thead th {
+    background:#2b2b2b; color:#fff; font-size:12px;
+    line-height:1.35; text-align:center;
+    border-right:1px solid #555; border-bottom:1px solid #2b2b2b;
+  }
+  table.wd thead th:last-child { border-right:none; }
+  table.wd tr.category-row td {
+    color:#fff; font-weight:700; font-size:14px;
+    padding:8px 12px; text-align:left;
+    border-right:1px solid rgba(255,255,255,.25);
+    border-bottom:1px solid #c8ced6;
+  }
+  table.wd tr.category-row td:last-child { border-right:none; }
+  table.wd tr.category-row .cat-actions {
+    float:right; display:flex; gap:4px; align-items:center;
+  }
+  table.wd tr.cat-meeting  td { background:#e89c3c; }
+  table.wd tr.cat-service  td { background:#d75b5b; }
+  table.wd tr.cat-web      td { background:#1f4486; }
+  table.wd tr.cat-project  td { background:#26195e; }
+  table.wd tr.cat-internal td { background:#4a78d8; }
+  table.wd tr.cat-pending  td { background:#9a9a9a; }
+  table.wd tbody tr.item td { background:#fff; }
+  table.wd tbody tr.item:hover td { background:#fbfcfe; }
+  table.wd .cell-input {
+    width:100%; border:none; background:transparent;
+    font:inherit; padding:2px 4px; outline:none;
+    text-align:inherit; color:inherit;
+  }
+  table.wd .cell-input:focus { background:#fff7d6; }
+  table.wd td.num { text-align:right; }
+  table.wd td.num .cell-input { text-align:right; }
+  table.wd td.center, table.wd th.center { text-align:center; }
+  table.wd td.center .cell-input { text-align:center; }
+  table.wd .row-del {
+    background:transparent; border:none; color:#fff;
+    cursor:pointer; font-size:16px; line-height:1;
+    padding:0 4px;
+  }
+  table.wd .row-del:hover { color:#ffd; }
+  table.wd .add-row-btn {
+    background:rgba(255,255,255,.85); color:#222;
+    border:none; padding:3px 10px; border-radius:4px;
+    font-size:12px; cursor:pointer; font-weight:600;
+  }
+  table.wd .add-row-btn:hover { background:#fff; }
+  table.wd .empty-cat td {
+    background:#fafbfc; color:#94a3b8; text-align:center;
+    font-size:12px; padding:8px;
+  }
+
+  /* read-only mode for submitted */
+  table.wd.readonly .cell-input { pointer-events:none; }
+  table.wd.readonly .row-del, table.wd.readonly .add-row-btn { display:none; }
+
+  /* history list */
+  .history-item {
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:8px; margin-bottom:10px; overflow:hidden;
+  }
+  .history-item > summary {
+    cursor:pointer; padding:12px 16px; list-style:none;
+    display:flex; align-items:center; gap:12px;
+    font-weight:600; color:var(--c-primary);
+    user-select:none;
+  }
+  .history-item > summary::-webkit-details-marker { display:none; }
+  .history-item > summary::before {
+    content:"▶"; font-size:11px; color:#94a3b8;
+    transition:transform .2s;
+  }
+  .history-item[open] > summary::before { transform:rotate(90deg); }
+  .history-item > summary:hover { background:var(--c-soft); }
+  .history-item .h-date { font-size:15px; }
+  .history-item .h-meta { margin-left:auto; font-size:12px; color:#64748b; font-weight:400; }
+  .history-item .h-body { padding:12px 16px 16px; border-top:1px solid var(--c-line); }
+  .history-empty {
+    text-align:center; color:#94a3b8; padding:24px;
+    background:#fff; border:1px dashed var(--c-line); border-radius:8px;
+  }
+
+  /* modal */
+  .modal-mask {
+    display:none; position:fixed; inset:0;
+    background:rgba(15,23,42,.45); z-index:100;
+    align-items:center; justify-content:center;
+  }
+  .modal-mask.show { display:flex; }
+  .modal {
+    background:#fff; border-radius:10px; padding:22px 24px;
+    width:min(520px, 92vw); box-shadow:0 12px 40px rgba(0,0,0,.25);
+  }
+  .modal h3 { margin:0 0 12px; color:var(--c-primary); }
+  .modal label { display:block; font-size:13px; color:#475569; margin:10px 0 4px; }
+  .modal input[type=text], .modal input[type=url] {
+    width:100%; padding:8px 10px; border:1px solid var(--c-line);
+    border-radius:6px; font:inherit;
+  }
+  .modal .modal-msg { font-size:13px; margin-top:10px; min-height:1.4em; }
+  .modal .modal-actions {
+    display:flex; gap:8px; justify-content:flex-end; margin-top:16px;
+    flex-wrap:wrap;
+  }
+  .modal .hint {
+    background:#f1f5f9; padding:10px 12px; border-radius:6px;
+    font-size:12.5px; line-height:1.6; color:#475569; margin-top:10px;
+  }
+  .modal .hint code { background:#fff; padding:1px 5px; border-radius:3px; }
+
+  /* col widths */
+  table.wd colgroup col.c-case   { width:10%; }
+  table.wd colgroup col.c-type   { width:6%;  }
+  table.wd colgroup col.c-date   { width:7%;  }
+  table.wd colgroup col.c-hour   { width:5%;  }
+  table.wd colgroup col.c-plugin { width:6%;  }
+  table.wd colgroup col.c-prog   { width:6%;  }
+  table.wd colgroup col.c-note   { width:14%; }
+  table.wd colgroup col.c-del    { width:36px; }
+
+  @media print {
+    body { background:#fff; }
+    header { box-shadow:none; }
+    .sync-bar, .page-nav, .row-del, .add-row-btn,
+    .modal-mask, .btn { display:none !important; }
+    table.wd { box-shadow:none; }
+  }
+  @media (max-width: 900px) {
+    .wrap { padding:16px 12px 60px; }
+    header { padding:18px 18px 14px; }
+    header h1 { font-size:20px; }
+    table.wd { font-size:11.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="page-nav" aria-label="分頁選單">
+  <a href="Design_Department.html">案件安排</a>
+  <a href="Workday.html">工作日報</a>
+  <a href="reward.html">獎金</a>
+  <a href="other.html">其他</a>
+  <a href="Static_Pages.html">靜態頁</a>
+  <a href="Jimmy.html">Jimmy</a>
+  <a href="Joey.html" class="active">Joey</a>
+  <a href="Cat.html">Cat</a>
+  <a href="阿柯.html">阿柯</a>
+</nav>
+
+<header>
+  <div>
+    <h1>設計部 工作日報</h1>
+    <div class="meta">每人每天一張 ｜ 暫存可改 ｜ 送出後鎖定</div>
+  </div>
+  <div class="author-tag">設計師：Joey</div>
+</header>
+
+<div class="sync-bar">
+  <div>雲端狀態：<span class="status" id="syncStatus" data-level="info">尚未設定</span></div>
+  <div class="btns">
+    <button class="btn" id="btnReload" type="button">重新讀取</button>
+    <button class="btn" id="btnExport" type="button">匯出 JSON</button>
+    <button class="btn" id="btnSetup"  type="button">設定雲端</button>
+  </div>
+</div>
+
+<!-- 今日日報 -->
+<section class="card" id="todayCard">
+  <h2>
+    <span>今日日報 <span id="todayDateLabel" style="font-weight:400;color:#475569;font-size:14px;"></span></span>
+    <span class="status-badge empty" id="todayStatus">未建立</span>
+  </h2>
+  <div id="todayTableHolder"></div>
+  <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;" id="todayActions">
+    <button class="btn accent"   id="btnSave"   type="button">暫存</button>
+    <button class="btn success"  id="btnSubmit" type="button">送出（鎖定）</button>
+    <button class="btn"          id="btnReset"  type="button">清空</button>
+  </div>
+</section>
+
+<!-- 歷史日報 -->
+<section class="card">
+  <h2>歷史日報（由新至舊）</h2>
+  <div id="historyHolder">
+    <div class="history-empty">尚未有歷史日報。</div>
+  </div>
+</section>
+
+<p style="text-align:center;color:#888;font-size:12px;margin-top:32px;">
+  — 工作日報 ・資料儲存於 Google Sheets via Apps Script ・<span id="footerAuthor">Joey</span> —
+</p>
+
+</div>
+
+<!-- 設定雲端 Modal -->
+<div class="modal-mask" id="setupModal">
+  <div class="modal">
+    <h3>設定雲端同步</h3>
+    <label for="setupUrl">Apps Script Web App URL（/exec 結尾）</label>
+    <input type="url" id="setupUrl" placeholder="https://script.google.com/macros/s/.../exec">
+    <div class="hint">
+      由 <code>cowell.design.department@gmail.com</code> 部署的 Apps Script Web App URL。<br>
+      部署步驟參考 <code>工作日報-AppsScript.gs</code> 檔首註解。
+    </div>
+    <div class="modal-msg" id="setupMsg"></div>
+    <div class="modal-actions">
+      <button class="btn"        id="setupClear" type="button">清除設定</button>
+      <button class="btn"        id="setupTest"  type="button">在新分頁測試</button>
+      <button class="btn"        id="setupCancel" type="button">取消</button>
+      <button class="btn primary" id="setupSave"  type="button">儲存並連線</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // === 設計師名稱（每個檔案唯一不同的地方）===
+  var AUTHOR = 'Joey';
+
+  // === 常數 ===
+  var CONFIG_KEY = 'workday_config_v1';
+  var DRAFT_KEY  = 'workday_draft_' + AUTHOR + '_v1';
+  var CACHE_KEY  = 'workday_cache_' + AUTHOR + '_v1';
+
+  var CATEGORIES = [
+    { key:'會議',     cls:'cat-meeting'  },
+    { key:'前台客服', cls:'cat-service'  },
+    { key:'網站建置', cls:'cat-web'      },
+    { key:'專案',     cls:'cat-project'  },
+    { key:'內部協助', cls:'cat-internal' },
+    { key:'待處理項目', cls:'cat-pending' }
+  ];
+
+  var COLUMNS = [
+    { key:'case',       label:'案件',       cls:'',       type:'text' },
+    { key:'type',       label:'性質',       cls:'',       type:'text' },
+    { key:'assigned',   label:'派案日期',   cls:'center', type:'date' },
+    { key:'dueDate',    label:'預定完成日期', cls:'center', type:'date' },
+    { key:'startDate',  label:'開始製作日期', cls:'center', type:'date' },
+    { key:'doneDate',   label:'實際完成日期', cls:'center', type:'date' },
+    { key:'estHours',   label:'預計總工時', cls:'num',    type:'number' },
+    { key:'todayHours', label:'今日工時',   cls:'num',    type:'number' },
+    { key:'plugin',     label:'插件',       cls:'center', type:'text' },
+    { key:'progress',   label:'進度(%)',    cls:'num',    type:'number' },
+    { key:'note',       label:'進度說明',   cls:'',       type:'text' }
+  ];
+
+  // === 狀態 ===
+  var CONFIG = loadConfig();
+  var REMOTE = loadCache();   // { "YYYY-MM-DD": { status, submittedAt, updatedAt, items:[] } }
+  var TODAY  = todayKey();
+  var todayItems = loadDraftOrFromRemote();
+  var savingNow = false;
+  var saveTimer = null;
+  var pendingSave = false;
+
+  // ============ utils ============
+  function $(id){ return document.getElementById(id); }
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];
+    });
+  }
+  function todayKey(){
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function formatDateLabel(k){
+    var p = k.split('-'); if (p.length < 3) return k;
+    var d = new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10));
+    var wd = ['日','一','二','三','四','五','六'][d.getDay()];
+    return p[0] + '/' + p[1] + '/' + p[2] + '（' + wd + '）';
+  }
+  function loadConfig(){
+    try { var s = localStorage.getItem(CONFIG_KEY); if (s) return JSON.parse(s); } catch(e){}
+    return { url: '' };
+  }
+  function saveConfig(){ localStorage.setItem(CONFIG_KEY, JSON.stringify(CONFIG)); }
+  function loadCache(){
+    try { var s = localStorage.getItem(CACHE_KEY); if (s) return JSON.parse(s) || {}; } catch(e){}
+    return {};
+  }
+  function saveCache(){
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(REMOTE)); } catch(e){}
+  }
+  function loadDraft(){
+    try { var s = localStorage.getItem(DRAFT_KEY); if (s) return JSON.parse(s); } catch(e){}
+    return null;
+  }
+  function saveDraft(){
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ date:TODAY, items:todayItems })); } catch(e){}
+  }
+  function clearDraft(){ try { localStorage.removeItem(DRAFT_KEY); } catch(e){} }
+  function loadDraftOrFromRemote(){
+    // 優先順序：本地草稿 → REMOTE 中今日資料 → 全新一張
+    var d = loadDraft();
+    if (d && d.date === TODAY && Array.isArray(d.items)) return d.items;
+    if (REMOTE[TODAY] && Array.isArray(REMOTE[TODAY].items)) {
+      return REMOTE[TODAY].items.map(function(x){ return Object.assign({}, x); });
+    }
+    return buildEmpty();
+  }
+  function buildEmpty(){ return []; }
+
+  function showStatus(text, level){
+    var el = $('syncStatus'); if (!el) return;
+    el.textContent = text; el.dataset.level = level || 'info';
+  }
+  function setSetupMsg(text, color){
+    var el = $('setupMsg'); if (!el) return;
+    el.textContent = text || ''; el.style.color = color || '#64748b';
+  }
+
+  // ============ render ============
+  function renderAll(){
+    renderToday();
+    renderHistory();
+  }
+  function renderToday(){
+    $('todayDateLabel').textContent = ' - ' + formatDateLabel(TODAY);
+    var remoteToday = REMOTE[TODAY];
+    var submitted = remoteToday && remoteToday.status === 'submitted';
+    var badge = $('todayStatus');
+    var actions = $('todayActions');
+    if (submitted) {
+      badge.className = 'status-badge submitted';
+      badge.textContent = '已送出 ' + (remoteToday.submittedAt || '');
+      // 送出後鎖定：直接顯示 remote 資料，按鈕全部禁用
+      $('todayTableHolder').innerHTML = renderTable(remoteToday.items || [], true);
+      actions.querySelectorAll('button').forEach(function(b){ b.disabled = true; });
+    } else if (!todayItems || todayItems.length === 0) {
+      // 沒有資料且不是已送出
+      if (remoteToday && remoteToday.status === 'draft') {
+        badge.className = 'status-badge draft';
+        badge.textContent = '草稿 ' + (remoteToday.updatedAt || '');
+      } else {
+        badge.className = 'status-badge empty';
+        badge.textContent = '未建立';
+      }
+      $('todayTableHolder').innerHTML = renderTable([], false);
+      actions.querySelectorAll('button').forEach(function(b){ b.disabled = false; });
+    } else {
+      badge.className = 'status-badge draft';
+      badge.textContent = remoteToday && remoteToday.status === 'draft'
+        ? ('草稿 ' + (remoteToday.updatedAt || ''))
+        : '編輯中';
+      $('todayTableHolder').innerHTML = renderTable(todayItems, false);
+      actions.querySelectorAll('button').forEach(function(b){ b.disabled = false; });
+    }
+    bindRowEvents($('todayTableHolder'), false);
+  }
+  function renderTable(items, readonly){
+    var grouped = {};
+    CATEGORIES.forEach(function(c){ grouped[c.key] = []; });
+    (items || []).forEach(function(it, idx){
+      var c = it.category || '會議';
+      if (!grouped[c]) grouped[c] = [];
+      grouped[c].push(Object.assign({ _idx: idx }, it));
+    });
+
+    var thead = '<thead><tr>' +
+      COLUMNS.map(function(c){ return '<th class="' + c.cls + '">' + c.label + '</th>'; }).join('') +
+      (readonly ? '' : '<th class="center">操作</th>') +
+      '</tr></thead>';
+
+    var colgroup = '<colgroup>' +
+      '<col class="c-case"><col class="c-type">' +
+      '<col class="c-date"><col class="c-date"><col class="c-date"><col class="c-date">' +
+      '<col class="c-hour"><col class="c-hour">' +
+      '<col class="c-plugin"><col class="c-prog"><col class="c-note">' +
+      (readonly ? '' : '<col class="c-del">') +
+      '</colgroup>';
+
+    var body = '';
+    CATEGORIES.forEach(function(cat){
+      var rows = grouped[cat.key] || [];
+      var addBtn = readonly ? '' :
+        '<span class="cat-actions"><button class="add-row-btn" data-act="add" data-cat="' + escapeHtml(cat.key) + '" type="button">+ 新增列</button></span>';
+      body += '<tr class="category-row ' + cat.cls + '"><td colspan="' + (COLUMNS.length + (readonly?0:1)) + '">' +
+        escapeHtml(cat.key) + addBtn +
+      '</td></tr>';
+      if (rows.length === 0) {
+        body += '<tr class="empty-cat"><td colspan="' + (COLUMNS.length + (readonly?0:1)) + '">（無）</td></tr>';
+      } else {
+        rows.forEach(function(it){
+          body += '<tr class="item" data-idx="' + it._idx + '">';
+          COLUMNS.forEach(function(col){
+            var val = it[col.key] == null ? '' : it[col.key];
+            if (readonly) {
+              body += '<td class="' + col.cls + '">' + escapeHtml(val) + '</td>';
+            } else {
+              body += '<td class="' + col.cls + '"><input class="cell-input" type="' +
+                (col.type === 'date' ? 'text' : col.type) +
+                '" data-key="' + col.key + '" value="' + escapeHtml(val) + '"' +
+                (col.type === 'date' ? ' placeholder="YYYY-MM-DD"' : '') +
+                '></td>';
+            }
+          });
+          if (!readonly) {
+            body += '<td class="center"><button class="row-del" data-act="del" type="button" title="刪除">×</button></td>';
+          }
+          body += '</tr>';
+        });
+      }
+    });
+
+    return '<table class="wd' + (readonly ? ' readonly' : '') + '">' +
+      colgroup + thead + '<tbody>' + body + '</tbody></table>';
+  }
+
+  function bindRowEvents(scope, readonly){
+    if (readonly) return;
+    scope.querySelectorAll('button[data-act="add"]').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        addRow(btn.dataset.cat);
+      });
+    });
+    scope.querySelectorAll('button[data-act="del"]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var tr = btn.closest('tr.item');
+        if (!tr) return;
+        var idx = parseInt(tr.dataset.idx, 10);
+        delRow(idx);
+      });
+    });
+    scope.querySelectorAll('input.cell-input').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var tr = inp.closest('tr.item');
+        if (!tr) return;
+        var idx = parseInt(tr.dataset.idx, 10);
+        var key = inp.dataset.key;
+        if (!todayItems[idx]) return;
+        var v = inp.value;
+        if (inp.type === 'number') v = v === '' ? '' : Number(v);
+        todayItems[idx][key] = v;
+        saveDraft();
+        scheduleAutoSave();
+      });
+    });
+  }
+
+  function addRow(cat){
+    var blank = { category: cat };
+    COLUMNS.forEach(function(c){ blank[c.key] = ''; });
+    todayItems.push(blank);
+    saveDraft();
+    renderToday();
+    scheduleAutoSave();
+  }
+  function delRow(idx){
+    if (idx < 0 || idx >= todayItems.length) return;
+    if (!confirm('刪除此列？')) return;
+    todayItems.splice(idx, 1);
+    saveDraft();
+    renderToday();
+    scheduleAutoSave();
+  }
+  function resetToday(){
+    if (!confirm('清空今日所有未送出的內容？')) return;
+    todayItems = [];
+    clearDraft();
+    renderToday();
+    scheduleAutoSave();
+  }
+
+  // ============ history ============
+  function renderHistory(){
+    var holder = $('historyHolder');
+    var keys = Object.keys(REMOTE).filter(function(k){ return k !== TODAY; }).sort().reverse();
+    if (keys.length === 0) {
+      holder.innerHTML = '<div class="history-empty">尚未有歷史日報。</div>';
+      return;
+    }
+    holder.innerHTML = keys.map(function(k){
+      var rec = REMOTE[k];
+      var badge = rec.status === 'submitted'
+        ? '<span class="status-badge submitted">已送出 ' + escapeHtml(rec.submittedAt || '') + '</span>'
+        : '<span class="status-badge draft">草稿</span>';
+      var meta = rec.status === 'submitted'
+        ? '共 ' + (rec.items || []).length + ' 項'
+        : '共 ' + (rec.items || []).length + ' 項（未送出）';
+      return '<details class="history-item">' +
+        '<summary><span class="h-date">' + escapeHtml(formatDateLabel(k)) + '</span>' + badge +
+        '<span class="h-meta">' + meta + '</span></summary>' +
+        '<div class="h-body">' + renderTable(rec.items || [], rec.status === 'submitted') + '</div>' +
+        '</details>';
+    }).join('');
+  }
+
+  // ============ cloud sync ============
+  function scheduleAutoSave(){
+    if (!CONFIG.url) return;
+    showStatus('待暫存…', 'busy');
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(function(){ doSave('save', true); }, 1200);
+  }
+
+  async function doSave(action, silent){
+    if (!CONFIG.url) {
+      showStatus('尚未設定雲端', 'info');
+      if (!silent) alert('請先點右上「設定雲端」貼上 Apps Script URL');
+      return false;
+    }
+    if (savingNow) { pendingSave = true; return false; }
+    savingNow = true; pendingSave = false;
+    showStatus(action === 'submit' ? '送出中…' : '儲存中…', 'busy');
+    try {
+      var res = await fetch(CONFIG.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: action,
+          author: AUTHOR,
+          date: TODAY,
+          items: todayItems
+        })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var json = await res.json();
+      if (!json.ok) throw new Error(json.error || (action === 'submit' ? '送出失敗' : '儲存失敗'));
+
+      REMOTE = json.data || {};
+      saveCache();
+      if (action === 'submit') {
+        clearDraft();
+        todayItems = (REMOTE[TODAY] && REMOTE[TODAY].items)
+          ? REMOTE[TODAY].items.map(function(x){ return Object.assign({}, x); })
+          : [];
+      }
+      renderAll();
+      var t = new Date();
+      var hh = String(t.getHours()).padStart(2,'0'), mm = String(t.getMinutes()).padStart(2,'0');
+      showStatus((action === 'submit' ? '已送出 ' : '已暫存 ') + hh + ':' + mm, 'ok');
+      if (action === 'submit' && !silent) {
+        alert('已送出並鎖定。如需修改請聯絡管理員。');
+      }
+      return true;
+    } catch(err){
+      showStatus((action === 'submit' ? '送出' : '儲存') + '失敗：' + err.message, 'err');
+      if (!silent) alert((action === 'submit' ? '送出' : '儲存') + '失敗：' + err.message);
+      return false;
+    } finally {
+      savingNow = false;
+      if (pendingSave) doSave('save', true);
+    }
+  }
+
+  async function pullNow(){
+    if (!CONFIG.url) { showStatus('尚未設定雲端', 'info'); return; }
+    showStatus('連線中…', 'busy');
+    try {
+      var url = CONFIG.url + (CONFIG.url.indexOf('?') >= 0 ? '&' : '?') + 'author=' + encodeURIComponent(AUTHOR);
+      var res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var json = await res.json();
+      if (!json.ok) throw new Error(json.error || '伺服器錯誤');
+      REMOTE = json.data || {};
+      saveCache();
+      // 若今日已送出，覆蓋 todayItems；否則保留本地草稿
+      if (REMOTE[TODAY] && REMOTE[TODAY].status === 'submitted') {
+        clearDraft();
+        todayItems = REMOTE[TODAY].items.map(function(x){ return Object.assign({}, x); });
+      } else if (!loadDraft() && REMOTE[TODAY]) {
+        todayItems = (REMOTE[TODAY].items || []).map(function(x){ return Object.assign({}, x); });
+      }
+      renderAll();
+      var t = new Date();
+      var hh = String(t.getHours()).padStart(2,'0'), mm = String(t.getMinutes()).padStart(2,'0');
+      showStatus('已同步 ' + hh + ':' + mm, 'ok');
+    } catch(err){
+      showStatus('連線失敗：' + err.message, 'err');
+    }
+  }
+
+  // ============ export ============
+  function exportJson(){
+    var payload = { author: AUTHOR, exportedAt: new Date().toISOString(), data: REMOTE };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var d = new Date();
+    var dd = d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+    a.href = url; a.download = '工作日報_' + AUTHOR + '_' + dd + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  // ============ setup modal ============
+  function openSetup(){
+    $('setupUrl').value = CONFIG.url || '';
+    setSetupMsg('');
+    $('setupModal').classList.add('show');
+  }
+  function closeSetup(){ $('setupModal').classList.remove('show'); }
+  async function setupSave(){
+    var url = ($('setupUrl').value || '').trim();
+    if (!url) { setSetupMsg('請輸入 URL', '#dc2626'); return; }
+    if (url.indexOf('script.google.com') < 0) {
+      setSetupMsg('⚠ URL 不是 Apps Script Web App 網址', '#dc2626'); return;
+    }
+    if (/\/dev$/.test(url)) {
+      setSetupMsg('⚠ 此為 /dev 開發網址，請改用 /exec 結尾的正式網址', '#dc2626'); return;
+    }
+    if (!/\/exec$/.test(url)) {
+      setSetupMsg('⚠ URL 應以 /exec 結尾', '#dc2626'); return;
+    }
+    setSetupMsg('測試中…', '#92400e');
+    try {
+      var testUrl = url + '?author=' + encodeURIComponent(AUTHOR);
+      var res = await fetch(testUrl, { method:'GET', redirect:'follow' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var text = await res.text();
+      var json;
+      try { json = JSON.parse(text); }
+      catch(e){
+        if (text.indexOf('<html') >= 0) throw new Error('收到 HTML 而非 JSON，存取權可能未設為「知道連結的任何人」');
+        throw new Error('回應非 JSON');
+      }
+      if (!json.ok) throw new Error(json.error || '伺服器回覆 ok=false');
+      CONFIG.url = url; saveConfig();
+      setSetupMsg('✓ 連線成功', '#065f46');
+      setTimeout(function(){ closeSetup(); pullNow(); }, 600);
+    } catch(err){
+      var msg = err.message || String(err);
+      if (msg.indexOf('Failed to fetch') >= 0) {
+        msg = 'Failed to fetch — 通常代表：(1) URL 錯誤 (2) 存取權未設為「知道連結的任何人」 (3) 瀏覽器擴充功能擋下';
+      }
+      setSetupMsg('✗ ' + msg, '#dc2626');
+    }
+  }
+  function setupClear(){
+    if (!confirm('清除目前的雲端 URL？')) return;
+    CONFIG.url = ''; saveConfig();
+    showStatus('尚未設定雲端', 'info');
+    closeSetup();
+  }
+  function setupTest(){
+    var url = ($('setupUrl').value || '').trim();
+    if (!url) { setSetupMsg('請先貼上 URL', '#dc2626'); return; }
+    window.open(url + (url.indexOf('?')>=0?'&':'?') + 'author=' + encodeURIComponent(AUTHOR), '_blank');
+  }
+
+  // ============ bind ============
+  document.addEventListener('DOMContentLoaded', function(){
+    $('btnSave').addEventListener('click', function(){ doSave('save', false); });
+    $('btnSubmit').addEventListener('click', function(){
+      if (todayItems.length === 0) { alert('沒有任何項目可送出'); return; }
+      if (!confirm('送出後將鎖定不可再修改，確定送出今日日報？')) return;
+      doSave('submit', false);
+    });
+    $('btnReset').addEventListener('click', resetToday);
+    $('btnReload').addEventListener('click', pullNow);
+    $('btnExport').addEventListener('click', exportJson);
+    $('btnSetup').addEventListener('click', openSetup);
+    $('setupSave').addEventListener('click', setupSave);
+    $('setupCancel').addEventListener('click', closeSetup);
+    $('setupClear').addEventListener('click', setupClear);
+    $('setupTest').addEventListener('click', setupTest);
+    $('setupModal').addEventListener('click', function(e){ if (e.target === $('setupModal')) closeSetup(); });
+
+    renderAll();
+    if (CONFIG.url) {
+      pullNow();
+    } else {
+      showStatus('尚未設定雲端，請點右上「設定雲端」', 'info');
+      // 首次進入引導
+      setTimeout(openSetup, 400);
+    }
+  });
+})();
+</script>
+</body>
+</html>

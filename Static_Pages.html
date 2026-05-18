@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>設計部 頁面連結</title>
+<style>
+  :root {
+    --c-primary:#1f4e79;
+    --c-accent:#ed7d31;
+    --c-soft:#f4f6f9;
+    --c-line:#d8dee6;
+    --c-done:#70ad47;
+    --c-warn:#c00000;
+    --c-text:#222;
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+    color:var(--c-text);
+    margin:0; padding:0;
+    background:#fafbfc;
+    line-height:1.7;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding:32px 28px 80px; }
+  .page-nav {
+    display:flex; gap:6px; margin-bottom:18px;
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:10px; padding:6px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+    flex-wrap:wrap;
+  }
+  .page-nav a {
+    flex:1 1 0; text-align:center; min-width:120px;
+    padding:10px 16px; border-radius:7px;
+    font-size:14px; font-weight:600;
+    color:var(--c-primary);
+    transition:background .2s, color .2s, box-shadow .2s;
+  }
+  .page-nav a:hover { background:var(--c-soft); text-decoration:none; }
+  .page-nav a.active {
+    background:linear-gradient(120deg,var(--c-primary),#2c6ea8);
+    color:#fff;
+    box-shadow:0 2px 6px rgba(31,78,121,.25);
+  }
+  .page-nav a.active:hover { background:linear-gradient(120deg,var(--c-primary),#2c6ea8); }
+  header {
+    background:linear-gradient(120deg,var(--c-primary),#2c6ea8);
+    color:#fff; padding:28px 28px 22px;
+    border-radius:10px;
+    box-shadow:0 4px 18px rgba(31,78,121,.18);
+    margin-bottom:30px;
+  }
+  header h1 { margin:0 0 6px; font-size:26px; letter-spacing:1px; }
+  header .meta { font-size:13px; opacity:.9; }
+  h2 {
+    font-size:20px; color:var(--c-primary);
+    border-left:6px solid var(--c-accent);
+    padding:6px 0 6px 14px;
+    margin:34px 0 14px;
+  }
+  table {
+    width:100%; border-collapse:collapse; margin:10px 0 16px;
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:6px; overflow:hidden;
+    font-size:14.5px;
+  }
+  th, td { padding:9px 12px; border-bottom:1px solid var(--c-line); text-align:left; vertical-align:top; }
+  th { background:var(--c-soft); color:var(--c-primary); font-weight:600; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:#fbfcfe; }
+  a { color:var(--c-primary); text-decoration:none; word-break:break-all; }
+  a:hover { text-decoration:underline; }
+  @media (max-width:720px) {
+    header h1 { font-size:21px; }
+  }
+  @media print {
+    body { background:#fff; }
+    header { box-shadow:none; }
+    table { box-shadow:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="page-nav" aria-label="分頁選單">
+  <a href="Design_Department.html">案件安排</a>
+  <a href="Workday.html">工作日報</a>
+  <a href="reward.html">獎金</a>
+  <a href="other.html">其他</a>
+  <a href="Static_Pages.html" class="active">靜態頁</a>
+  <a href="Jimmy.html">Jimmy</a>
+  <a href="Joey.html">Joey</a>
+  <a href="Cat.html">Cat</a>
+  <a href="阿柯.html">阿柯</a>
+</nav>
+
+<header>
+  <h1>設計部 頁面連結</h1>
+  <div class="meta">資料來源：設計部案件安排.docx ｜ 由 Design_Department.html 拆分</div>
+</header>
+
+<h2 id="s1">一、eWeb 會員機制</h2>
+<table>
+  <thead><tr><th style="width:160px">頁面</th><th>連結</th></tr></thead>
+  <tbody>
+    <tr><td>會員登入</td><td><a href="https://design.travelindex.com.tw/eWeb_design/member_Login.asp" target="_blank" rel="noopener">https://design.travelindex.com.tw/eWeb_design/member_Login.asp</a></td></tr>
+    <tr><td>會員專區</td><td><a href="https://design.travelindex.com.tw/eWeb_design/member.asp" target="_blank" rel="noopener">https://design.travelindex.com.tw/eWeb_design/member.asp</a></td></tr>
+    <tr><td>會員資料</td><td><a href="https://design.travelindex.com.tw/eWeb_design/member_dataupd.asp" target="_blank" rel="noopener">https://design.travelindex.com.tw/eWeb_design/member_dataupd.asp</a></td></tr>
+    <tr><td>訊息通知</td><td><a href="https://design.travelindex.com.tw/eWeb_design/member_news.asp" target="_blank" rel="noopener">https://design.travelindex.com.tw/eWeb_design/member_news.asp</a></td></tr>
+    <tr><td>訂單查詢</td><td><a href="https://design.travelindex.com.tw/eWeb_design/member_ordersearch.asp" target="_blank" rel="noopener">https://design.travelindex.com.tw/eWeb_design/member_ordersearch.asp</a></td></tr>
+    <tr><td>訂單明細</td><td><a href="https://design.travelindex.com.tw/eWeb_design/member_orderdetail.asp" target="_blank" rel="noopener">https://design.travelindex.com.tw/eWeb_design/member_orderdetail.asp</a></td></tr>
+    <tr><td>即時行樂</td><td><a href="https://design.travelindex.com.tw/eWeb_design/member_ht.asp" target="_blank" rel="noopener">https://design.travelindex.com.tw/eWeb_design/member_ht.asp</a></td></tr>
+    <tr><td>行前說明會</td><td><a href="https://design.travelindex.com.tw/eWeb_design/member_grupstate.asp" target="_blank" rel="noopener">https://design.travelindex.com.tw/eWeb_design/member_grupstate.asp</a></td></tr>
+    <tr><td>帳戶安全</td><td><a href="https://design.travelindex.com.tw/eWeb_design/member_pwupd.asp" target="_blank" rel="noopener">https://design.travelindex.com.tw/eWeb_design/member_pwupd.asp</a></td></tr>
+  </tbody>
+</table>
+
+<h2 id="s2">二、FILLO 明細頁</h2>
+<table>
+  <thead><tr><th style="width:220px">頁面</th><th>連結</th></tr></thead>
+  <tbody>
+    <tr><td>國外團體團型</td><td><a href="https://design.travelindex.com.tw/Begonia/FOREIGN-MGO-Detail.html" target="_blank" rel="noopener">https://design.travelindex.com.tw/Begonia/FOREIGN-MGO-Detail.html</a></td></tr>
+    <tr><td>國外團自團型</td><td><a href="https://design.travelindex.com.tw/Begonia/FOREIGN-MPGO-Detail.html" target="_blank" rel="noopener">https://design.travelindex.com.tw/Begonia/FOREIGN-MPGO-Detail.html</a></td></tr>
+    <tr><td>國外團體個團（海棠版）</td><td><a href="https://design.travelindex.com.tw/Begonia/trip-new.html" target="_blank" rel="noopener">https://design.travelindex.com.tw/Begonia/trip-new.html</a></td></tr>
+    <tr><td>國內團體團型</td><td><a href="https://design.travelindex.com.tw/Begonia/DOMESTIC-MGDT-Detail.html" target="_blank" rel="noopener">https://design.travelindex.com.tw/Begonia/DOMESTIC-MGDT-Detail.html</a></td></tr>
+    <tr><td>國內團自團型</td><td><a href="https://design.travelindex.com.tw/Begonia/DOMESTIC-MPGDT-Detail.html" target="_blank" rel="noopener">https://design.travelindex.com.tw/Begonia/DOMESTIC-MPGDT-Detail.html</a></td></tr>
+    <tr><td>國內團體個團</td><td><a href="https://design.travelindex.com.tw/Begonia/GDT-Detail.html" target="_blank" rel="noopener">https://design.travelindex.com.tw/Begonia/GDT-Detail.html</a></td></tr>
+    <tr><td>國內團自個團</td><td><a href="https://design.travelindex.com.tw/Begonia/GPDT-Detail.html" target="_blank" rel="noopener">https://design.travelindex.com.tw/Begonia/GPDT-Detail.html</a></td></tr>
+  </tbody>
+</table>
+
+<p style="text-align:center;color:#888;font-size:12px;margin-top:40px;">— 頁面連結 ・由 Design_Department.html 拆分 —</p>
+
+</div>
+</body>
+</html>

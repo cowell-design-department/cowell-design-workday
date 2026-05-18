@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>設計部 工作管理系統</title>
+<style>
+  :root {
+    --c-primary:#1f4e79;
+    --c-accent:#ed7d31;
+    --c-soft:#f4f6f9;
+    --c-line:#d8dee6;
+    --c-text:#222;
+  }
+  * { box-sizing:border-box; }
+  body {
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+    margin:0; padding:0; color:var(--c-text);
+    background:#fafbfc; line-height:1.7;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding:32px 24px 60px; }
+  header {
+    background:linear-gradient(120deg,var(--c-primary),#2c6ea8);
+    color:#fff; padding:36px 32px;
+    border-radius:12px; margin-bottom:28px;
+    box-shadow:0 4px 18px rgba(31,78,121,.18);
+  }
+  header h1 { margin:0 0 8px; font-size:30px; letter-spacing:1px; }
+  header p { margin:0; opacity:.9; font-size:14px; }
+  h2 {
+    font-size:20px; color:var(--c-primary);
+    border-left:6px solid var(--c-accent);
+    padding:6px 0 6px 14px;
+    margin:32px 0 14px;
+  }
+  .grid {
+    display:grid; gap:14px;
+    grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+  }
+  .grid a {
+    display:block; padding:18px 20px;
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:10px; text-decoration:none;
+    color:var(--c-text); transition:all .15s;
+    box-shadow:0 2px 8px rgba(15,23,42,.04);
+  }
+  .grid a:hover {
+    border-color:var(--c-primary);
+    box-shadow:0 4px 14px rgba(31,78,121,.15);
+    transform:translateY(-2px);
+  }
+  .grid a .name {
+    display:block; font-size:17px; font-weight:700;
+    color:var(--c-primary); margin-bottom:4px;
+  }
+  .grid a .desc {
+    display:block; font-size:13px; color:#64748b;
+  }
+  .grid.designers a { border-left:4px solid var(--c-accent); }
+  footer {
+    text-align:center; color:#94a3b8; font-size:12px;
+    margin-top:48px; padding-top:20px;
+    border-top:1px solid var(--c-line);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>設計部 工作管理系統</h1>
+  <p>工作日報・案件安排・獎金管理</p>
+</header>
+
+<h2>設計師日報</h2>
+<div class="grid designers">
+  <a href="Jimmy.html"><span class="name">Jimmy</span><span class="desc">個人工作日報</span></a>
+  <a href="Joey.html"><span class="name">Joey</span><span class="desc">個人工作日報</span></a>
+  <a href="Cat.html"><span class="name">Cat</span><span class="desc">個人工作日報</span></a>
+  <a href="阿柯.html"><span class="name">阿柯</span><span class="desc">個人工作日報</span></a>
+</div>
+
+<h2>共用資訊</h2>
+<div class="grid">
+  <a href="Design_Department.html"><span class="name">案件安排</span><span class="desc">設計部案件總覽</span></a>
+  <a href="Workday.html"><span class="name">工作日報範本</span><span class="desc">空白範本檢視</span></a>
+  <a href="reward.html"><span class="name">獎金</span><span class="desc">獎金制度</span></a>
+  <a href="other.html"><span class="name">其他</span><span class="desc">其他資訊</span></a>
+  <a href="Static_Pages.html"><span class="name">靜態頁</span><span class="desc">靜態頁面清單</span></a>
+</div>
+
+<footer>
+  © Cowell Design Department ・資料儲存於 Google Sheets via Apps Script
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>設計部案件安排 彙整報告</title>
+<style>
+  :root {
+    --c-primary:#1f4e79;
+    --c-accent:#ed7d31;
+    --c-soft:#f4f6f9;
+    --c-line:#d8dee6;
+    --c-done:#70ad47;
+    --c-warn:#c00000;
+    --c-text:#222;
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+    color:var(--c-text);
+    margin:0; padding:0;
+    background:#fafbfc;
+    line-height:1.7;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding:32px 28px 80px; }
+  .page-nav {
+    display:flex; gap:6px; margin-bottom:18px;
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:10px; padding:6px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+    flex-wrap:wrap;
+  }
+  .page-nav a {
+    flex:1 1 0; text-align:center; min-width:140px;
+    padding:10px 16px; border-radius:7px;
+    font-size:14px; font-weight:600;
+    color:var(--c-primary);
+    transition:background .2s, color .2s, box-shadow .2s;
+  }
+  .page-nav a:hover { background:var(--c-soft); text-decoration:none; }
+  .page-nav a.active {
+    background:linear-gradient(120deg,var(--c-primary),#2c6ea8);
+    color:#fff;
+    box-shadow:0 2px 6px rgba(31,78,121,.25);
+  }
+  .page-nav a.active:hover { background:linear-gradient(120deg,var(--c-primary),#2c6ea8); }
+  header {
+    background:linear-gradient(120deg,var(--c-primary),#2c6ea8);
+    color:#fff; padding:28px 28px 22px;
+    border-radius:10px;
+    box-shadow:0 4px 18px rgba(31,78,121,.18);
+    margin-bottom:30px;
+  }
+  header h1 { margin:0 0 6px; font-size:26px; letter-spacing:1px; }
+  header .meta { font-size:13px; opacity:.9; }
+  header .entry-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    margin-top:12px;
+    background:var(--c-accent); color:#fff;
+    padding:8px 18px; border-radius:20px;
+    font-size:13.5px; font-weight:600; text-decoration:none;
+    box-shadow:0 2px 8px rgba(237,125,49,.35);
+    transition:transform .15s, box-shadow .2s, background .2s;
+  }
+  header .entry-btn:hover {
+    background:#d96b1f; text-decoration:none;
+    transform:translateY(-1px);
+    box-shadow:0 4px 12px rgba(237,125,49,.5);
+  }
+  header .entry-btn .arrow { font-size:14px; }
+  h2 {
+    font-size:20px; color:var(--c-primary);
+    border-left:6px solid var(--c-accent);
+    padding:6px 0 6px 14px;
+    margin:34px 0 14px;
+  }
+  h3 { font-size:16px; color:#2c6ea8; margin:18px 0 8px; }
+  table {
+    width:100%; border-collapse:collapse; margin:10px 0 16px;
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:6px; overflow:hidden;
+    font-size:14.5px;
+  }
+  th, td { padding:9px 12px; border-bottom:1px solid var(--c-line); text-align:left; vertical-align:top; }
+  th { background:var(--c-soft); color:var(--c-primary); font-weight:600; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:#fbfcfe; }
+  .progress-cell { width:180px; }
+  .pbar {
+    background:#eef1f5; border-radius:10px; overflow:hidden;
+    height:14px; position:relative;
+  }
+  .pbar > span {
+    display:block; height:100%;
+    background:linear-gradient(90deg,#5b9bd5,#1f4e79);
+    color:#fff; font-size:11px; line-height:14px;
+    text-align:right; padding-right:6px; min-width:24px;
+    transition:width .3s;
+  }
+  .pbar.high > span { background:linear-gradient(90deg,#9ed27d,var(--c-done)); }
+  .pbar.low  > span { background:linear-gradient(90deg,#f0b27a,var(--c-accent)); }
+  .badge {
+    display:inline-block; padding:2px 9px; border-radius:11px;
+    font-size:12px; background:var(--c-soft); color:var(--c-primary);
+    margin-right:4px;
+  }
+  .badge.done { background:#e8f5e0; color:var(--c-done); }
+  .badge.warn { background:#fde9e9; color:var(--c-warn); }
+  .grid {
+    display:grid; gap:16px;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  }
+  .card {
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:8px; padding:14px 16px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+  }
+  .card h4 { margin:0 0 8px; color:var(--c-primary); font-size:15px; }
+  .card ul { margin:0; padding-left:18px; }
+  ul.clean { list-style:none; padding-left:0; }
+  ul.clean li { padding:4px 0; border-bottom:1px dashed var(--c-line); }
+  ul.clean li:last-child { border-bottom:none; }
+  .pill {
+    display:inline-block; padding:3px 10px; border-radius:12px;
+    background:var(--c-soft); color:var(--c-primary);
+    font-size:12.5px; margin:2px 4px 2px 0;
+  }
+  .pill.dot::before { content:"●"; color:var(--c-accent); margin-right:5px; }
+  .note {
+    background:#fff8ec; border-left:4px solid var(--c-accent);
+    padding:10px 14px; border-radius:4px; font-size:14px;
+    margin:10px 0;
+  }
+  .quote {
+    background:#f4f6f9; border-left:4px solid var(--c-primary);
+    padding:12px 16px; border-radius:4px; font-size:14.5px;
+    margin:10px 0; color:#333;
+  }
+  ol.spec { padding-left:22px; }
+  ol.spec li { margin-bottom:4px; }
+  a { color:var(--c-primary); text-decoration:none; word-break:break-all; }
+  a:hover { text-decoration:underline; }
+  .summary-stats {
+    display:grid; gap:12px;
+    grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+    margin:6px 0 8px;
+  }
+  .stat {
+    background:#fff; border:1px solid var(--c-line); border-radius:8px;
+    padding:14px; text-align:center;
+  }
+  .stat .n { font-size:26px; color:var(--c-primary); font-weight:700; }
+  .stat .l { font-size:12.5px; color:#666; }
+  .toc {
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:8px; padding:14px 18px; margin-bottom:24px;
+  }
+  .table-scroll {
+    width:100%; overflow-x:auto;
+    border-radius:6px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .table-scroll table { margin:0; min-width:1100px; }
+  .table-scroll th, .table-scroll td { white-space:nowrap; }
+  .table-scroll td.wrap { white-space:normal; min-width:180px; }
+  .daily-tip {
+    font-size:12.5px; color:#666; margin:4px 0 14px;
+  }
+  .toc ol { columns:2; -webkit-columns:2; padding-left:22px; margin:6px 0; }
+  .toc li { margin-bottom:3px; font-size:14px; }
+  .back-to-toc {
+    position:fixed; right:24px; bottom:24px;
+    width:52px; height:52px; border-radius:50%;
+    background:linear-gradient(135deg,var(--c-primary),#2c6ea8);
+    color:#fff; border:none; cursor:pointer;
+    box-shadow:0 4px 14px rgba(31,78,121,.35);
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column; line-height:1;
+    font-family:inherit;
+    opacity:0; visibility:hidden;
+    transform:translateY(10px);
+    transition:opacity .25s, transform .25s, visibility .25s, box-shadow .2s;
+    z-index:999;
+  }
+  .back-to-toc.show { opacity:1; visibility:visible; transform:translateY(0); }
+  .back-to-toc:hover { box-shadow:0 6px 20px rgba(31,78,121,.5); transform:translateY(-2px); }
+  .back-to-toc .arrow { font-size:16px; margin-bottom:2px; }
+  .back-to-toc .label { font-size:11px; letter-spacing:.5px; }
+  @media (max-width:720px) {
+    .toc ol { columns:1; }
+    header h1 { font-size:21px; }
+    .back-to-toc { right:16px; bottom:16px; width:46px; height:46px; }
+    .back-to-toc .label { font-size:10px; }
+  }
+  @media print {
+    body { background:#fff; }
+    header { box-shadow:none; }
+    .card, table { box-shadow:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="page-nav" aria-label="分頁選單">
+  <a href="Design_Department.html" class="active">案件安排</a>
+  <a href="Workday.html">工作日報</a>
+  <a href="reward.html">獎金</a>
+  <a href="other.html">其他</a>
+  <a href="Static_Pages.html">靜態頁</a>
+  <a href="Jimmy.html">Jimmy</a>
+  <a href="Joey.html">Joey</a>
+  <a href="Cat.html">Cat</a>
+  <a href="阿柯.html">阿柯</a>
+</nav>
+
+<header>
+  <h1>設計部案件安排 彙整報告</h1>
+  <div class="meta">資料來源：設計部案件安排.docx ｜ 彙整日期：2026-05-08</div>
+</header>
+
+<section class="toc" id="toc">
+  <strong>目錄</strong>
+  <ol>
+    <li><a href="#s1">案件總覽（統計）</a></li>
+    <li><a href="#s2">各設計師案件進度</a></li>
+    <li><a href="#s3">公司專案</a></li>
+    <li><a href="#s4">設計部聯合建置</a></li>
+  </ol>
+</section>
+
+<h2 id="s1">一、案件總覽（統計）</h2>
+<div class="summary-stats">
+  <div class="stat"><div class="n">16</div><div class="l">設計師外部案件</div></div>
+  <div class="stat"><div class="n">5</div><div class="l">公司內部專案模組</div></div>
+  <div class="stat"><div class="n">3</div><div class="l">已安排洽談（聯合）</div></div>
+  <div class="stat"><div class="n">18</div><div class="l">已完成案件</div></div>
+</div>
+<table>
+  <thead>
+    <tr><th>設計師</th><th>進行中案件</th><th>備註</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Jimmy</td><td>2</td><td>世興 / 飛美家（皆接近完工）</td></tr>
+    <tr><td>Joey</td><td>5</td><td>璽旅 / 太平洋 / HKA 馥翔 / 東南遊學 / 世群</td></tr>
+    <tr><td>Cat</td><td>6</td><td>中青旅 / 心予 / 吉米 / 翫遊 / 有愛 / 金禾</td></tr>
+    <tr><td>阿柯</td><td>3 + 多項公司專案</td><td>台灣中國 / 輕裝上陣 / 動向 + Mobiz / DC / 行銷活動 / 線上簽核</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s2">二、各設計師案件進度</h2>
+
+<h3>Jimmy（2 件）</h3>
+<table>
+  <thead><tr><th>案件</th><th>派案日</th><th class="progress-cell">進度</th></tr></thead>
+  <tbody>
+    <tr><td>世　　興</td><td>10/27 直派</td><td><div class="pbar high"><span style="width:98.5%">98.5%</span></div></td></tr>
+    <tr><td>飛 美 家</td><td>01/19 直派</td><td><div class="pbar high"><span style="width:95%">95%</span></div></td></tr>
+  </tbody>
+</table>
+
+<h3>Joey（5 件）</h3>
+<table>
+  <thead><tr><th>案件</th><th>派案日</th><th class="progress-cell">進度</th></tr></thead>
+  <tbody>
+    <tr><td>璽　　旅</td><td>01/14 直派</td><td><div class="pbar"><span style="width:57%">57%</span></div></td></tr>
+    <tr><td>太 平 洋</td><td>02/13 直派</td><td><div class="pbar low"><span style="width:22%">22%</span></div></td></tr>
+    <tr><td>HKA 馥翔</td><td>03/18 直派</td><td><div class="pbar"><span style="width:62%">62%</span></div></td></tr>
+    <tr><td>東南遊學</td><td>05/04 直派</td><td><div class="pbar low"><span style="width:1%">0%</span></div></td></tr>
+    <tr><td>世　　群</td><td>05/14 直派 <span class="badge warn">新派案</span></td><td><div class="pbar low"><span style="width:1%">0%</span></div></td></tr>
+  </tbody>
+</table>
+
+<h3>Cat（6 件）</h3>
+<table>
+  <thead><tr><th>案件</th><th>派案日</th><th class="progress-cell">進度</th></tr></thead>
+  <tbody>
+    <tr><td>中 青 旅</td><td>01/20 直派</td><td><div class="pbar high"><span style="width:80%">80%</span></div></td></tr>
+    <tr><td>心　　予</td><td>12/16 直派</td><td><div class="pbar high"><span style="width:96%">96%</span></div></td></tr>
+    <tr><td>吉　　米</td><td>01/26 直派</td><td><div class="pbar"><span style="width:60%">60%</span></div></td></tr>
+    <tr><td>翫　　遊</td><td>04/07 直派</td><td><div class="pbar low"><span style="width:17%">17%</span></div></td></tr>
+    <tr><td>有　　愛</td><td>04/29 直派</td><td><div class="pbar low"><span style="width:1%">0%</span></div></td></tr>
+    <tr><td>金　　禾</td><td>05/14 直派 <span class="badge warn">新派案</span></td><td><div class="pbar low"><span style="width:1%">0%</span></div></td></tr>
+  </tbody>
+</table>
+
+<h3>阿柯（外部 3 件 + 多項公司專案）</h3>
+<table>
+  <thead><tr><th>案件</th><th>派案日</th><th class="progress-cell">進度</th></tr></thead>
+  <tbody>
+    <tr><td>台灣中國</td><td>07/11 直派</td><td><div class="pbar high"><span style="width:95%">95%</span></div></td></tr>
+    <tr><td>輕裝上陣</td><td>07/22 直派</td><td><div class="pbar low"><span style="width:2%">2%</span></div></td></tr>
+    <tr><td>動　　向</td><td>11/11 直派</td><td><div class="pbar"><span style="width:66%">66%</span></div></td></tr>
+  </tbody>
+</table>
+
+<h2 id="s3">三、公司專案</h2>
+<div class="note">公司專案負責人組合：<strong>陳董、漢堡、阿柯</strong>（Mobiz 與 DC 管理介面）</div>
+<table>
+  <thead><tr><th>專案</th><th>子項目</th><th class="progress-cell">進度</th></tr></thead>
+  <tbody>
+    <tr><td rowspan="2">Mobiz</td><td>初始化介面設計</td><td><div class="pbar high"><span style="width:80%">80%</span></div></td></tr>
+    <tr><td>產品列表介面設計</td><td><div class="pbar"><span style="width:50%">50%</span></div></td></tr>
+    <tr><td>DC</td><td>管理平台介面設計</td><td><div class="pbar low"><span style="width:13%">13%</span></div></td></tr>
+    <tr><td colspan="2">行銷活動管理</td><td><div class="pbar low"><span style="width:48%">48%</span></div></td></tr>
+    <tr><td colspan="2">線上簽核系統介面設計</td><td><div class="pbar"><span style="width:56%">56%</span></div></td></tr>
+  </tbody>
+</table>
+
+<h2 id="s4">四、設計部聯合建置</h2>
+<div class="grid">
+  <div class="card">
+    <h4>已洽談・尚未派案</h4>
+    <ul class="clean"><li style="color:#999">（無）</li></ul>
+  </div>
+  <div class="card">
+    <h4>已安排洽談</h4>
+    <ul class="clean">
+      <li><span class="badge">04/30 (四) 10:00</span> 東南遊學 <span class="badge done">已派案 → Joey</span></li>
+      <li><span class="badge">04/30 (四) 15:00</span> 盛盈</li>
+      <li><span class="badge">05/07 (四) 14:00</span> 金禾 <span class="badge done">已派案 → Cat</span></li>
+      <li><span class="badge">05/08 (五) 14:00</span> 世群 <span class="badge done">已派案 → Joey</span></li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>已安排 DEMO</h4>
+    <ul class="clean"><li style="color:#999">（無）</li></ul>
+  </div>
+  <div class="card">
+    <h4>未安排洽談</h4>
+    <ul class="clean"><li style="color:#999">（無）</li></ul>
+  </div>
+  <div class="card">
+    <h4>待確認客戶</h4>
+    <ul class="clean"><li style="color:#999">（無）</li></ul>
+  </div>
+</div>
+
+<div class="note" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+  <span><strong>人員名單／設計流程／網站洽談範例／其他備註</strong>已拆分至獨立頁面。</span>
+  <a href="other.html" style="font-weight:600;">前往 other.html →</a>
+</div>
+
+<div class="note" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+  <span><strong>獎金・已完成・計費</strong>已拆分至獨立頁面。</span>
+  <a href="reward.html" style="font-weight:600;">前往 reward.html →</a>
+</div>
+
+<div class="note" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+  <span><strong>會員相關連結</strong>已拆分至獨立頁面。</span>
+  <a href="Static_Pages.html" style="font-weight:600;">前往 Static_Pages.html →</a>
+</div>
+
+<div class="note" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+  <span><strong>工作日報</strong>已拆分至獨立頁面。</span>
+  <a href="Workday.html" style="font-weight:600;">前往 Workday.html →</a>
+</div>
+
+<p style="text-align:center;color:#888;font-size:12px;margin-top:40px;">— 設計部案件安排 彙整報告 ・本檔案由原始 設計部案件安排.docx 整理 —</p>
+
+</div>
+
+<button class="back-to-toc" id="backToToc" aria-label="回到目錄" title="回到目錄">
+  <span class="arrow">▲</span>
+  <span class="label">目錄</span>
+</button>
+
+<script>
+  (function () {
+    var btn = document.getElementById('backToToc');
+    var toc = document.getElementById('toc');
+    if (!btn || !toc) return;
+
+    function onScroll() {
+      if (window.pageYOffset > 320) {
+        btn.classList.add('show');
+      } else {
+        btn.classList.remove('show');
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive:true });
+    onScroll();
+
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      toc.scrollIntoView({ behavior:'smooth', block:'start' });
+    });
+  })();
+</script>
+</body>
+</html>

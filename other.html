@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>設計部 人員・流程・範例・備註 彙整</title>
+<style>
+  :root {
+    --c-primary:#1f4e79;
+    --c-accent:#ed7d31;
+    --c-soft:#f4f6f9;
+    --c-line:#d8dee6;
+    --c-done:#70ad47;
+    --c-warn:#c00000;
+    --c-text:#222;
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+    color:var(--c-text);
+    margin:0; padding:0;
+    background:#fafbfc;
+    line-height:1.7;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding:32px 28px 80px; }
+  .page-nav {
+    display:flex; gap:6px; margin-bottom:18px;
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:10px; padding:6px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+    flex-wrap:wrap;
+  }
+  .page-nav a {
+    flex:1 1 0; text-align:center; min-width:140px;
+    padding:10px 16px; border-radius:7px;
+    font-size:14px; font-weight:600;
+    color:var(--c-primary);
+    transition:background .2s, color .2s, box-shadow .2s;
+  }
+  .page-nav a:hover { background:var(--c-soft); text-decoration:none; }
+  .page-nav a.active {
+    background:linear-gradient(120deg,var(--c-primary),#2c6ea8);
+    color:#fff;
+    box-shadow:0 2px 6px rgba(31,78,121,.25);
+  }
+  .page-nav a.active:hover { background:linear-gradient(120deg,var(--c-primary),#2c6ea8); }
+  header {
+    background:linear-gradient(120deg,var(--c-primary),#2c6ea8);
+    color:#fff; padding:28px 28px 22px;
+    border-radius:10px;
+    box-shadow:0 4px 18px rgba(31,78,121,.18);
+    margin-bottom:30px;
+  }
+  header h1 { margin:0 0 6px; font-size:26px; letter-spacing:1px; }
+  header .meta { font-size:13px; opacity:.9; }
+  h2 {
+    font-size:20px; color:var(--c-primary);
+    border-left:6px solid var(--c-accent);
+    padding:6px 0 6px 14px;
+    margin:34px 0 14px;
+  }
+  h3 { font-size:16px; color:#2c6ea8; margin:18px 0 8px; }
+  table {
+    width:100%; border-collapse:collapse; margin:10px 0 16px;
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:6px; overflow:hidden;
+    font-size:14.5px;
+  }
+  th, td { padding:9px 12px; border-bottom:1px solid var(--c-line); text-align:left; vertical-align:top; }
+  th { background:var(--c-soft); color:var(--c-primary); font-weight:600; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:#fbfcfe; }
+  .badge {
+    display:inline-block; padding:2px 9px; border-radius:11px;
+    font-size:12px; background:var(--c-soft); color:var(--c-primary);
+    margin-right:4px;
+  }
+  .badge.warn { background:#fde9e9; color:var(--c-warn); }
+  .grid {
+    display:grid; gap:16px;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  }
+  .card {
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:8px; padding:14px 16px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+  }
+  .card h4 { margin:0 0 8px; color:var(--c-primary); font-size:15px; }
+  .card ul { margin:0; padding-left:18px; }
+  ul.clean { list-style:none; padding-left:0; }
+  ul.clean li { padding:4px 0; border-bottom:1px dashed var(--c-line); }
+  ul.clean li:last-child { border-bottom:none; }
+  .note {
+    background:#fff8ec; border-left:4px solid var(--c-accent);
+    padding:10px 14px; border-radius:4px; font-size:14px;
+    margin:10px 0;
+  }
+  .quote {
+    background:#f4f6f9; border-left:4px solid var(--c-primary);
+    padding:12px 16px; border-radius:4px; font-size:14.5px;
+    margin:10px 0; color:#333;
+  }
+  ol.spec { padding-left:22px; }
+  ol.spec li { margin-bottom:4px; }
+  a { color:var(--c-primary); text-decoration:none; word-break:break-all; }
+  a:hover { text-decoration:underline; }
+  .toc {
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:8px; padding:14px 18px; margin-bottom:24px;
+  }
+  .toc ol { padding-left:22px; margin:6px 0; }
+  .toc li { margin-bottom:3px; font-size:14px; }
+  .back-to-toc {
+    position:fixed; right:24px; bottom:24px;
+    width:52px; height:52px; border-radius:50%;
+    background:linear-gradient(135deg,var(--c-primary),#2c6ea8);
+    color:#fff; border:none; cursor:pointer;
+    box-shadow:0 4px 14px rgba(31,78,121,.35);
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column; line-height:1;
+    font-family:inherit;
+    opacity:0; visibility:hidden;
+    transform:translateY(10px);
+    transition:opacity .25s, transform .25s, visibility .25s, box-shadow .2s;
+    z-index:999;
+  }
+  .back-to-toc.show { opacity:1; visibility:visible; transform:translateY(0); }
+  .back-to-toc:hover { box-shadow:0 6px 20px rgba(31,78,121,.5); transform:translateY(-2px); }
+  .back-to-toc .arrow { font-size:16px; margin-bottom:2px; }
+  .back-to-toc .label { font-size:11px; letter-spacing:.5px; }
+  @media (max-width:720px) {
+    header h1 { font-size:21px; }
+    .back-to-toc { right:16px; bottom:16px; width:46px; height:46px; }
+    .back-to-toc .label { font-size:10px; }
+  }
+  @media print {
+    body { background:#fff; }
+    header { box-shadow:none; }
+    .card, table { box-shadow:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="page-nav" aria-label="分頁選單">
+  <a href="Design_Department.html">案件安排</a>
+  <a href="Workday.html">工作日報</a>
+  <a href="reward.html">獎金</a>
+  <a href="other.html" class="active">其他</a>
+  <a href="Static_Pages.html">靜態頁</a>
+  <a href="Jimmy.html">Jimmy</a>
+  <a href="Joey.html">Joey</a>
+  <a href="Cat.html">Cat</a>
+  <a href="阿柯.html">阿柯</a>
+</nav>
+
+<header>
+  <h1>設計部 人員・流程・範例・備註 彙整</h1>
+  <div class="meta">資料來源：設計部案件安排.docx ｜ 由 Design_Department.html 拆分</div>
+</header>
+
+<section class="toc" id="toc">
+  <strong>目錄</strong>
+  <ol>
+    <li><a href="#s1">人員名單與客戶溝通範本</a></li>
+    <li><a href="#s2">設計流程</a></li>
+    <li><a href="#s3">網站洽談範例（3 例）</a></li>
+    <li><a href="#s4">其他備註</a></li>
+  </ol>
+</section>
+
+<h2 id="s1">一、人員名單與客戶溝通範本</h2>
+<div class="grid">
+  <div class="card">
+    <h4>網站客服</h4>
+    <ul class="clean"><li>Milly Lin</li><li>Cynthia Liu</li></ul>
+  </div>
+  <div class="card">
+    <h4>設計師</h4>
+    <ul class="clean"><li>沁樺</li><li>Mavis Ke</li><li>Rong</li></ul>
+  </div>
+</div>
+<div class="quote">
+  「大家好，我是科威資訊設計部門主管，<span class="badge warn">@設計師</span> 是負責貴司網站建置的設計師，後續有甚麼想法或問題都可以提出來與她討論！」
+</div>
+
+<h2 id="s2">二、設計流程</h2>
+<ol class="spec">
+  <li><strong>Wireframe</strong>　線框圖</li>
+  <li><strong>Mockup</strong>　視覺設計稿</li>
+  <li><strong>Prototype</strong>　原型
+    <div class="note" style="margin-top:6px">
+      Web：由網頁設計師、前端工程師執行<br>
+      App：由 iOS 工程師或 Android 工程師執行
+    </div>
+  </li>
+</ol>
+
+<h2 id="s3">三、網站洽談範例</h2>
+
+<h3>範例 1 ｜ 國內旅遊・中老年客群</h3>
+<table>
+  <tbody>
+    <tr><th>風格</th><td>參考合勝、簡約有質感，主做國內旅遊，使用通用商品；中老年客群為主，字級偏大。</td></tr>
+    <tr><th>分頁</th><td>關於我們、相關文章次頁、相關文章內頁、客製行程（表單）、最新活動。</td></tr>
+    <tr><th>色系</th><td>以 LOGO 企業色延伸：橘、黑、大地色系。</td></tr>
+  </tbody>
+</table>
+<h4 style="color:#1f4e79;margin:12px 0 4px">首頁區塊規格</h4>
+<table>
+  <thead><tr><th style="width:130px">區塊</th><th>規格說明</th></tr></thead>
+  <tbody>
+    <tr><td>上標</td><td>參考合勝排版＆效果。LOGO + 上標副選單（電話、社群 icon FB/YT/IG/LINE/推特、會員專區、聯絡我們）；上標主選單（限時推薦、國內旅遊（下拉：跟著課綱去旅行・風土凝萃）、國外旅遊、相關文章、客製行程、關於深旅、最新活動）。</td></tr>
+    <tr><td>側邊欄</td><td>放 LINE 和推特連結。</td></tr>
+    <tr><td>大圖輪播</td><td>參考凱仕，無縮放效果，圖片滿版，文字置於下方。</td></tr>
+    <tr><td>搜尋引擎</td><td>國內＋國外搜尋，樣式由設計師設計。</td></tr>
+    <tr><td>國內旅遊</td><td>tab：跟著課綱去旅行 / 風土凝萃。參考合勝首頁左圖右文區塊，可輪播；主/副標 28px，內文 23px + 行距 2.3。</td></tr>
+    <tr><td>日本旅遊<br>（未來改為國外旅遊）</td><td>tab：北海道、東北、九州、四國。同上樣式。</td></tr>
+    <tr><td>相關文章</td><td>一排 3 個圖文輪播，樣式由設計師設計。</td></tr>
+    <tr><td>顧客回饋</td><td>參考僑興首頁「精心安排您的每趟旅程」區塊，樣式由設計師設計。</td></tr>
+    <tr><td>下標</td><td>版型參考合勝；公司資料參考原網站，文字連結不用放。</td></tr>
+  </tbody>
+</table>
+<h4 style="color:#1f4e79;margin:12px 0 4px">分頁區塊排版</h4>
+<table>
+  <tbody>
+    <tr><th style="width:130px">關於我們</th><td>參考客戶原官網（付款方式、聯絡我們、客製服務按鈕不放），由設計師自行設計排版。<br><a href="https://origintravel.com.tw/webobj/company.asp">https://origintravel.com.tw/webobj/company.asp</a></td></tr>
+    <tr><th>相關文章次頁</th><td>版型參考凱仕「馬爾地夫精彩遊記」頁面：最上 2 篇最新文章 + 中間分類 TAB（跟著課綱去旅行 / 風土凝萃）+ 下方 4 個一排圖文連結。</td></tr>
+    <tr><th>相關文章內頁</th><td>版型參考凱仕「馬爾地夫精彩遊記」內頁：左為文章區塊 + 右為照片燈箱（超過高度出現 scroll），照片點開下方有詳細介紹。</td></tr>
+    <tr><th>客製行程</th><td>待客戶提供表單欄位。</td></tr>
+    <tr><th>最新活動</th><td>分「跟著課綱去旅行」、「風土凝萃」兩區塊，每區放 3 張一排圖片連結（連到公版）。參考原官網首頁下方 3 圖區塊。</td></tr>
+  </tbody>
+</table>
+
+<h3>範例 2 ｜ 高爾夫・東南亞線</h3>
+<table>
+  <tbody>
+    <tr><th>風格</th><td>參考合勝＋永信，乾淨簡潔，主做高爾夫、東南亞線，使用通用商品包裝當地遊和租車。</td></tr>
+    <tr><th>分頁</th><td>關於我們、旅程故事、優惠活動（其餘待提供）。</td></tr>
+    <tr><th>色系</th><td>LOGO 企業色延伸：藍 + 橘。</td></tr>
+  </tbody>
+</table>
+<h4 style="color:#1f4e79;margin:12px 0 4px">首頁區塊規格</h4>
+<table>
+  <thead><tr><th style="width:130px">區塊</th><th>規格說明</th></tr></thead>
+  <tbody>
+    <tr><td>上標</td><td>參考合勝效果＋永信排版。主選單：國際機票、租車/包車、精選高爾夫、泰國專區、國外旅遊、臺灣旅遊、郵輪/河輪、客製服務、旅程故事、關於第三家、優惠活動。副選單：電話、社群 icon、會員專區。</td></tr>
+    <tr><td>大圖輪播</td><td>參考元本，縮放效果、圖片滿版、文字按鈕切換。</td></tr>
+    <tr><td>搜尋引擎</td><td>僅國外搜尋，樣式由設計師設計。</td></tr>
+    <tr><td>區塊 1</td><td>參考永信首頁「遊探索」區塊，預設 6 個。</td></tr>
+    <tr><td>區塊 2</td><td>參考永信首頁「夯旅遊」區塊。</td></tr>
+    <tr><td>區塊 3</td><td>參考永信首頁「小編推薦」區塊。</td></tr>
+    <tr><td>區塊 4</td><td>參考永信首頁「影音專區」區塊。</td></tr>
+    <tr><td>下標</td><td>版型參考凱仕；公司資料參考原網站。</td></tr>
+  </tbody>
+</table>
+<h4 style="color:#1f4e79;margin:12px 0 4px">分頁區塊排版</h4>
+<table>
+  <tbody>
+    <tr><th style="width:130px">關於我們</th><td>參考客戶原官網，由設計師自行排版。<br><a href="https://www.linlintour.com.tw/About">https://www.linlintour.com.tw/About</a></td></tr>
+    <tr><th>旅程故事</th><td>版型參考合勝「旅程故事」頁面。</td></tr>
+    <tr><th>優惠活動</th><td>內容待客戶提供。</td></tr>
+  </tbody>
+</table>
+
+<h3>範例 3 ｜ 團體自由行・日式風格</h3>
+<table>
+  <tbody>
+    <tr><th>風格</th><td>參考凱仕＋日式感，主做團體自由行（團體行程為輔），以日本、東南亞為主。</td></tr>
+    <tr><th>分頁</th><td>關於我們（其餘待提供）。</td></tr>
+    <tr><th>色系</th><td>LOGO 企業色延伸：深藍 + 淺藍 + 橘黃。</td></tr>
+  </tbody>
+</table>
+<h4 style="color:#1f4e79;margin:12px 0 4px">首頁區塊規格</h4>
+<table>
+  <thead><tr><th style="width:130px">區塊</th><th>規格說明</th></tr></thead>
+  <tbody>
+    <tr><td>上標</td><td>版型參考凱仕：進入頁面 LOGO 在中間，下滑後換至左側。客戶預設 6 個選單，內容待提供。</td></tr>
+    <tr><td>大圖輪播</td><td>參考凱仕，有縮放效果、圖片滿版。</td></tr>
+    <tr><td>搜尋引擎</td><td>僅國外搜尋，樣式由設計師設計。</td></tr>
+    <tr><td>主題自由行</td><td>參考凱仕首頁「主題精選飯店」區塊，預設 6 個。</td></tr>
+    <tr><td>精選行程</td><td>圖文連結輪播，參考樂觀漫旅「主題行程」+ 凱仕「YOYO 視界」+ 凱仕「精彩遊記」。</td></tr>
+    <tr><td>下標</td><td>版型參考樂觀漫旅；公司資料參考原網站，右側連結：國外旅遊契約書、信用卡刷卡單、護照自帶切結書…等（客戶會再增加）。</td></tr>
+  </tbody>
+</table>
+<h4 style="color:#1f4e79;margin:12px 0 4px">分頁區塊排版</h4>
+<table>
+  <tbody>
+    <tr><th style="width:130px">關於我們</th><td>參考客戶原官網，由設計師自行排版。</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s4">四、其他備註</h2>
+<div class="grid">
+  <div class="card">
+    <h4>上品旅行社</h4>
+    <p>參考對象：雄獅、康福、富康、可樂。</p>
+  </div>
+  <div class="card">
+    <h4>晴日</h4>
+    <ul class="clean">
+      <li>下標：喜歡輪播</li>
+      <li>中間區塊：5 個模組（日本、韓國、東南亞、大陸、國內）</li>
+      <li>1. 大圖輪播</li>
+      <li>2. 左右輪播模組（參考喜歡）</li>
+      <li>3. 頁籤</li>
+    </ul>
+  </div>
+</div>
+
+<p style="text-align:center;color:#888;font-size:12px;margin-top:40px;">— 人員・流程・範例・備註 彙整 ・由 Design_Department.html 拆分 —</p>
+
+</div>
+
+<button class="back-to-toc" id="backToToc" aria-label="回到目錄" title="回到目錄">
+  <span class="arrow">▲</span>
+  <span class="label">目錄</span>
+</button>
+
+<script>
+  (function () {
+    var btn = document.getElementById('backToToc');
+    var toc = document.getElementById('toc');
+    if (!btn || !toc) return;
+
+    function onScroll() {
+      if (window.pageYOffset > 320) {
+        btn.classList.add('show');
+      } else {
+        btn.classList.remove('show');
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive:true });
+    onScroll();
+
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      toc.scrollIntoView({ behavior:'smooth', block:'start' });
+    });
+  })();
+</script>
+</body>
+</html>
