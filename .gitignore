@@ -17,3 +17,6 @@ Desktop.ini
 # Backup
 *.bak
 *.orig
+
+# Claude Code local
+.claude/

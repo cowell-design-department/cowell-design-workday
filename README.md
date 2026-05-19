@@ -10,7 +10,7 @@ GitHub Pages 啟用後可從以下網址存取：
 - Jimmy：`https://<GITHUB_USERNAME>.github.io/cowell-design-workday/Jimmy.html`
 - Joey：`https://<GITHUB_USERNAME>.github.io/cowell-design-workday/Joey.html`
 - Cat：`https://<GITHUB_USERNAME>.github.io/cowell-design-workday/Cat.html`
-- 阿柯：`https://<GITHUB_USERNAME>.github.io/cowell-design-workday/阿柯.html`
+- Mavis：`https://<GITHUB_USERNAME>.github.io/cowell-design-workday/Mavis.html`
 
 ## 架構
 
@@ -72,7 +72,7 @@ Google Sheet「工作日報」共 18 欄：
 | 欄位 | 說明 |
 |---|---|
 | `date` | 日期 (YYYY-MM-DD) |
-| `author` | 設計師（Jimmy / Joey / Cat / 阿柯） |
+| `author` | 設計師（Jimmy / Joey / Cat / Mavis） |
 | `status` | `draft` 或 `submitted` |
 | `rowOrder` | 同張日報內的列順序 |
 | `category` | 分類 |
@@ -90,7 +90,7 @@ Google Sheet「工作日報」共 18 欄：
 
 ```
 index.html                  - GitHub Pages 首頁（導覽）
-Jimmy.html / Joey.html / Cat.html / 阿柯.html
+Jimmy.html / Joey.html / Cat.html / Mavis.html
                             - 各設計師的日報頁
 Design_Department.html      - 案件安排
 Workday.html                - 工作日報空白範本

@@ -10,7 +10,7 @@
  *  6. 執行身分：我 (cowell.design.department@gmail.com) / 存取權：知道連結的任何人
  *  7. 部署並完成授權（若出現未驗證警告，點「進階」→「前往未驗證的應用程式」）
  *  8. 複製產生的「網路應用程式 URL」（/exec 結尾）
- *  9. 把 URL 分別貼到 Jimmy.html / Joey.html / Cat.html / 阿柯.html 的「設定雲端」對話框
+ *  9. 把 URL 分別貼到 Jimmy.html / Joey.html / Cat.html / Mavis.html 的「設定雲端」對話框
  *
  * 修改本檔後，記得「管理部署作業」→ 鉛筆圖示 → 版本選「新版本」→ 部署，才會生效。
  *
