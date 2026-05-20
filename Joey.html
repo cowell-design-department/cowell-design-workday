@@ -155,11 +155,12 @@
   table.wd td.center, table.wd th.center { text-align:center; }
   table.wd td.center .cell-input { text-align:center; }
   table.wd .row-del {
-    background:transparent; border:none; color:#fff;
+    background:transparent; border:1px solid var(--c-warn); color:var(--c-warn);
     cursor:pointer; font-size:16px; line-height:1;
-    padding:0 4px;
+    padding:2px 7px; font-weight:700; border-radius:4px;
+    transition:background .15s,color .15s;
   }
-  table.wd .row-del:hover { color:#ffd; }
+  table.wd .row-del:hover { color:#fff; background:var(--c-warn); }
   table.wd .add-row-btn {
     background:rgba(255,255,255,.85); color:#222;
     border:none; padding:3px 10px; border-radius:4px;
