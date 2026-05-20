@@ -142,14 +142,32 @@
   table.wd tr.cat-project  td { background:#5e4d96; }
   table.wd tr.cat-internal td { background:#3e8e7e; }
   table.wd tr.cat-pending  td { background:#6e7a8a; }
+  table.wd:not(.readonly) tr.item { cursor:move; }
+  table.wd:not(.readonly) tr.item .cell-input { cursor:text; }
+  table.wd tr.item.dragging { opacity:.4; }
+  table.wd tr.item.drop-above td { box-shadow:inset 0 3px 0 0 var(--c-primary); }
+  table.wd tr.item.drop-below td { box-shadow:inset 0 -3px 0 0 var(--c-primary); }
+  table.wd tr.category-row.drop-target td { box-shadow:inset 0 0 0 2px rgba(255,255,255,.8); }
   table.wd tbody tr.item td { background:#fff; }
   table.wd tbody tr.item:hover td { background:#fbfcfe; }
   table.wd .cell-input {
     width:100%; border:none; background:transparent;
-    font:inherit; padding:2px 4px; outline:none;
+    font:inherit; font-weight:400; padding:2px 4px; outline:none;
     text-align:inherit; color:inherit;
   }
   table.wd .cell-input:focus { background:#fff7d6; }
+  table.wd .cell-input[type="date"] {
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-weight:400; color-scheme:light;
+  }
+  table.wd .cell-input[type="date"]::-webkit-calendar-picker-indicator { display:none; }
+  table.wd .cell-input[type="date"]::-webkit-inner-spin-button { display:none; }
+  table.wd .cell-input[type="date"]::-webkit-datetime-edit,
+  table.wd .cell-input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+  table.wd .cell-input[type="date"]::-webkit-datetime-edit-text,
+  table.wd .cell-input[type="date"]::-webkit-datetime-edit-year-field,
+  table.wd .cell-input[type="date"]::-webkit-datetime-edit-month-field,
+  table.wd .cell-input[type="date"]::-webkit-datetime-edit-day-field { font-weight:400; }
   table.wd td.num { text-align:right; }
   table.wd td.num .cell-input { text-align:right; }
   table.wd td.center, table.wd th.center { text-align:center; }
@@ -234,11 +252,11 @@
   table.wd colgroup col.c-case   { width:13%; }
   table.wd colgroup col.c-type   { width:5%;  }
   table.wd colgroup col.c-date   { width:7%;  }
-  table.wd colgroup col.c-hour   { width:5%;  }
+  table.wd colgroup col.c-hour   { width:6%;  }
   table.wd colgroup col.c-plugin { width:4%;  }
   table.wd colgroup col.c-prog   { width:5%;  }
-  table.wd colgroup col.c-note   { width:24%; }
-  table.wd colgroup col.c-del    { width:32px; }
+  table.wd colgroup col.c-note   { width:28%; }
+  table.wd colgroup col.c-del    { width:5%;  }
   table.wd tr.item > td:last-child,
   table.wd thead th:last-child { padding:6px 2px; }
 
@@ -390,15 +408,34 @@
   }
   function clearDraft(){ try { localStorage.removeItem(DRAFT_KEY); } catch(e){} }
   function loadDraftOrFromRemote(){
-    // 優先順序：本地草稿 → REMOTE 中今日資料 → 全新一張
+    // 優先順序：本地草稿 → REMOTE 中今日資料 → 延續前日未完成項目 → 全新一張
     var d = loadDraft();
     if (d && d.date === TODAY && Array.isArray(d.items)) return d.items;
     if (REMOTE[TODAY] && Array.isArray(REMOTE[TODAY].items)) {
       return REMOTE[TODAY].items.map(function(x){ return Object.assign({}, x); });
     }
+    var carried = carryOverFromPrevious();
+    if (carried.length > 0) return carried;
     return buildEmpty();
   }
   function buildEmpty(){ return []; }
+  function carryOverFromPrevious(){
+    // 從 REMOTE 找最近一天(早於今日),把進度 < 100% 的項目帶過來
+    var keys = Object.keys(REMOTE).filter(function(k){ return k < TODAY; }).sort().reverse();
+    if (keys.length === 0) return [];
+    var rec = REMOTE[keys[0]];
+    if (!rec || !Array.isArray(rec.items)) return [];
+    return rec.items
+      .filter(function(it){
+        var p = (it.progress === '' || it.progress == null) ? 0 : Number(it.progress);
+        return isNaN(p) || p < 100;
+      })
+      .map(function(it){
+        var copy = Object.assign({}, it);
+        copy.todayHours = '';
+        return copy;
+      });
+  }
 
   function showStatus(text, level){
     var el = $('syncStatus'); if (!el) return;
@@ -476,17 +513,15 @@
         body += '<tr class="empty-cat"><td colspan="' + (COLUMNS.length + (readonly?0:1)) + '">（無）</td></tr>';
       } else {
         rows.forEach(function(it){
-          body += '<tr class="item" data-idx="' + it._idx + '">';
+          body += '<tr class="item" data-idx="' + it._idx + '"' + (readonly ? '' : ' draggable="true"') + '>';
           COLUMNS.forEach(function(col){
             var val = it[col.key] == null ? '' : it[col.key];
             if (readonly) {
               body += '<td class="' + col.cls + '">' + escapeHtml(val) + '</td>';
             } else {
-              body += '<td class="' + col.cls + '"><input class="cell-input" type="' +
-                (col.type === 'date' ? 'text' : col.type) +
-                '" data-key="' + col.key + '" value="' + escapeHtml(val) + '"' +
-                (col.type === 'date' ? ' placeholder="YYYY-MM-DD"' : '') +
-                '></td>';
+              body += '<td class="' + col.cls + '"><input class="cell-input" draggable="false" type="' +
+                col.type +
+                '" data-key="' + col.key + '" value="' + escapeHtml(val) + '"></td>';
             }
           });
           if (!readonly) {
@@ -528,6 +563,85 @@
         if (inp.type === 'number') v = v === '' ? '' : Number(v);
         todayItems[idx][key] = v;
         saveDraft();
+        scheduleAutoSave();
+      });
+    });
+    // 日期欄:點擊整格自動開啟原生日期選擇器(icon 已隱藏)
+    scope.querySelectorAll('input.cell-input[type="date"]').forEach(function(inp){
+      inp.addEventListener('click', function(){
+        if (typeof inp.showPicker === 'function') {
+          try { inp.showPicker(); } catch(e){}
+        }
+      });
+    });
+    // 拖曳:同類別內重排序 + 跨類別移動
+    scope.querySelectorAll('tr.item').forEach(function(tr){
+      tr.addEventListener('dragstart', function(e){
+        if (e.target.tagName === 'INPUT') { e.preventDefault(); return; }
+        e.dataTransfer.setData('text/plain', tr.dataset.idx);
+        e.dataTransfer.effectAllowed = 'move';
+        tr.classList.add('dragging');
+      });
+      tr.addEventListener('dragend', function(){
+        tr.classList.remove('dragging');
+        scope.querySelectorAll('.drop-target,.drop-above,.drop-below').forEach(function(r){
+          r.classList.remove('drop-target','drop-above','drop-below');
+        });
+      });
+      tr.addEventListener('dragover', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'move';
+        var rect = tr.getBoundingClientRect();
+        var below = e.clientY > rect.top + rect.height / 2;
+        tr.classList.remove(below ? 'drop-above' : 'drop-below');
+        tr.classList.add(below ? 'drop-below' : 'drop-above');
+      });
+      tr.addEventListener('dragleave', function(){
+        tr.classList.remove('drop-above','drop-below');
+      });
+      tr.addEventListener('drop', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        var below = tr.classList.contains('drop-below');
+        tr.classList.remove('drop-above','drop-below');
+        var srcIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        var targetIdx = parseInt(tr.dataset.idx, 10);
+        if (isNaN(srcIdx) || isNaN(targetIdx) || srcIdx === targetIdx) return;
+        if (!todayItems[srcIdx] || !todayItems[targetIdx]) return;
+        var item = todayItems[srcIdx];
+        item.category = todayItems[targetIdx].category;
+        var insertIdx = targetIdx + (below ? 1 : 0);
+        todayItems.splice(srcIdx, 1);
+        if (srcIdx < insertIdx) insertIdx--;
+        todayItems.splice(insertIdx, 0, item);
+        saveDraft();
+        renderToday();
+        scheduleAutoSave();
+      });
+    });
+    scope.querySelectorAll('tr.category-row').forEach(function(tr){
+      tr.addEventListener('dragover', function(e){
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        tr.classList.add('drop-target');
+      });
+      tr.addEventListener('dragleave', function(){
+        tr.classList.remove('drop-target');
+      });
+      tr.addEventListener('drop', function(e){
+        e.preventDefault();
+        tr.classList.remove('drop-target');
+        var srcIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        if (isNaN(srcIdx) || !todayItems[srcIdx]) return;
+        var newCat = null;
+        CATEGORIES.forEach(function(c){ if (tr.classList.contains(c.cls)) newCat = c.key; });
+        if (!newCat || newCat === todayItems[srcIdx].category) return;
+        var item = todayItems.splice(srcIdx, 1)[0];
+        item.category = newCat;
+        todayItems.push(item);
+        saveDraft();
+        renderToday();
         scheduleAutoSave();
       });
     });
@@ -643,12 +757,15 @@
       if (!json.ok) throw new Error(json.error || '伺服器錯誤');
       REMOTE = json.data || {};
       saveCache();
-      // 若今日已送出，覆蓋 todayItems；否則保留本地草稿
+      // 若今日已送出，覆蓋 todayItems；否則保留本地草稿;沒有草稿也沒有今日資料時嘗試延續前日
       if (REMOTE[TODAY] && REMOTE[TODAY].status === 'submitted') {
         clearDraft();
         todayItems = REMOTE[TODAY].items.map(function(x){ return Object.assign({}, x); });
       } else if (!loadDraft() && REMOTE[TODAY]) {
         todayItems = (REMOTE[TODAY].items || []).map(function(x){ return Object.assign({}, x); });
+      } else if (!loadDraft() && !REMOTE[TODAY]) {
+        var carried = carryOverFromPrevious();
+        if (carried.length > 0) todayItems = carried;
       }
       renderAll();
       var t = new Date();
