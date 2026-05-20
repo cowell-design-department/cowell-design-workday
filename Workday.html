@@ -2,7 +2,8 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<title>設計部 工作日報</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>設計部 工作日報 - 多人檢視</title>
 <style>
   :root {
     --c-primary:#1f4e79;
@@ -17,126 +18,227 @@
   html { scroll-behavior:smooth; }
   body {
     font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
-    color:var(--c-text);
-    margin:0; padding:0;
-    background:#fafbfc;
-    line-height:1.7;
+    color:var(--c-text); margin:0; padding:0;
+    background:#fafbfc; line-height:1.7;
   }
-  .wrap { max-width:1080px; margin:0 auto; padding:32px 28px 80px; }
+  .wrap { max-width:1280px; margin:0 auto; padding:24px 20px 80px; }
+  a { color:var(--c-primary); text-decoration:none; word-break:break-all; }
+  a:hover { text-decoration:underline; }
   .page-nav {
-    display:flex; gap:6px; margin-bottom:18px;
+    display:flex; gap:6px; margin-bottom:14px;
     background:#fff; border:1px solid var(--c-line);
     border-radius:10px; padding:6px;
     box-shadow:0 1px 3px rgba(0,0,0,.04);
     flex-wrap:wrap;
   }
   .page-nav a {
-    flex:1 1 0; text-align:center; min-width:120px;
-    padding:10px 16px; border-radius:7px;
-    font-size:14px; font-weight:600;
+    flex:1 1 0; text-align:center; min-width:90px;
+    padding:9px 14px; border-radius:7px;
+    font-size:13.5px; font-weight:600;
     color:var(--c-primary);
-    transition:background .2s, color .2s, box-shadow .2s;
+    transition:background .2s,color .2s,box-shadow .2s;
   }
   .page-nav a:hover { background:var(--c-soft); text-decoration:none; }
   .page-nav a.active {
     background:linear-gradient(120deg,var(--c-primary),#2c6ea8);
-    color:#fff;
-    box-shadow:0 2px 6px rgba(31,78,121,.25);
+    color:#fff; box-shadow:0 2px 6px rgba(31,78,121,.25);
   }
-  .page-nav a.active:hover { background:linear-gradient(120deg,var(--c-primary),#2c6ea8); }
   header {
     background:linear-gradient(120deg,var(--c-primary),#2c6ea8);
-    color:#fff; padding:28px 28px 22px;
+    color:#fff; padding:24px 28px 20px;
     border-radius:10px;
     box-shadow:0 4px 18px rgba(31,78,121,.18);
-    margin-bottom:30px;
+    margin-bottom:18px;
   }
-  header h1 { margin:0 0 6px; font-size:26px; letter-spacing:1px; }
+  header h1 { margin:0 0 4px; font-size:24px; letter-spacing:1px; }
   header .meta { font-size:13px; opacity:.9; }
-  h2 {
-    font-size:20px; color:var(--c-primary);
-    border-left:6px solid var(--c-accent);
-    padding:6px 0 6px 14px;
-    margin:34px 0 14px;
-  }
-  h3 { font-size:16px; color:#2c6ea8; margin:18px 0 8px; }
-  table {
-    width:100%; border-collapse:collapse; margin:10px 0 16px;
+
+  /* sync bar */
+  .sync-bar {
+    display:flex; justify-content:space-between; align-items:center;
     background:#fff; border:1px solid var(--c-line);
-    border-radius:6px; overflow:hidden;
-    font-size:14.5px;
+    border-radius:8px; padding:8px 14px; margin-bottom:12px;
+    font-size:13px; flex-wrap:wrap; gap:10px;
   }
-  th, td { padding:9px 12px; border-bottom:1px solid var(--c-line); text-align:left; vertical-align:top; }
-  th { background:var(--c-soft); color:var(--c-primary); font-weight:600; }
-  tr:last-child td { border-bottom:none; }
-  tr:hover td { background:#fbfcfe; }
-  .note {
-    background:#fff8ec; border-left:4px solid var(--c-accent);
-    padding:10px 14px; border-radius:4px; font-size:14px;
-    margin:10px 0;
+  .sync-bar .status[data-level="ok"]   { color:#137333; }
+  .sync-bar .status[data-level="busy"] { color:#92400e; }
+  .sync-bar .status[data-level="err"]  { color:#b42318; }
+  .sync-bar .status[data-level="info"] { color:#475569; }
+  .sync-bar .btns { display:flex; gap:6px; flex-wrap:wrap; }
+  .btn {
+    border:1px solid var(--c-line); background:#fff;
+    padding:6px 12px; border-radius:6px; font-size:13px;
+    cursor:pointer; color:var(--c-text);
+    font-family:inherit;
+    transition:background .15s,border-color .15s;
   }
-  .daily-tip {
-    font-size:12.5px; color:#666; margin:4px 0 14px;
+  .btn:hover { background:var(--c-soft); }
+  .btn.primary { background:var(--c-primary); border-color:var(--c-primary); color:#fff; }
+  .btn.primary:hover { background:#16395a; }
+
+  /* tab nav */
+  .tab-nav {
+    display:flex; gap:6px; margin-bottom:18px;
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:10px; padding:6px;
+    flex-wrap:wrap;
   }
-  .workday-table {
-    table-layout:fixed; font-size:12.5px;
-    border:1px solid #2b2b2b;
+  .tab-nav button {
+    flex:1 1 0; min-width:90px;
+    background:transparent; border:none;
+    padding:9px 14px; border-radius:7px;
+    font-size:13.5px; font-weight:600;
+    color:var(--c-primary); cursor:pointer;
+    font-family:inherit;
+    transition:background .2s,color .2s,box-shadow .2s;
   }
-  .workday-table th, .workday-table td {
-    padding:6px 6px;
-    word-break:break-word; white-space:normal;
-    vertical-align:middle;
-    border-right:1px solid #c8ced6;
-    border-bottom:1px solid #c8ced6;
+  .tab-nav button:hover { background:var(--c-soft); }
+  .tab-nav button.active {
+    background:linear-gradient(120deg,var(--c-primary),#2c6ea8);
+    color:#fff; box-shadow:0 2px 6px rgba(31,78,121,.25);
   }
-  .workday-table th:last-child, .workday-table td:last-child { border-right:none; }
-  .workday-table thead th {
-    background:#2b2b2b; color:#fff;
-    font-size:12px; line-height:1.35; text-align:center;
-    border-right:1px solid #555;
-    border-bottom:1px solid #2b2b2b;
+
+  /* card */
+  .card {
+    background:#fff; border:1px solid var(--c-line);
+    border-radius:10px; padding:18px 20px; margin-bottom:20px;
+    box-shadow:0 2px 8px rgba(15,23,42,.04);
   }
-  .workday-table thead th:last-child { border-right:none; }
-  .workday-table td { min-height:30px; }
-  .workday-table colgroup col.c-case   { width:10%; }
-  .workday-table colgroup col.c-type   { width:6%; }
-  .workday-table colgroup col.c-date   { width:7.5%; }
-  .workday-table colgroup col.c-hour   { width:6%; }
-  .workday-table colgroup col.c-plugin { width:6%; }
-  .workday-table colgroup col.c-prog   { width:6%; }
-  .workday-table colgroup col.c-note   { width:14%; }
-  .workday-table tr.category-row td {
+  .card h2 {
+    font-size:18px; margin:0 0 14px;
+    color:var(--c-primary);
+    border-left:5px solid var(--c-accent);
+    padding:4px 0 4px 12px;
+    display:flex; justify-content:space-between; align-items:center;
+    flex-wrap:wrap; gap:10px;
+  }
+  .card h2 .card-meta {
+    font-weight:400; color:#475569; font-size:14px; margin-right:auto; margin-left:10px;
+  }
+  .empty-msg {
+    text-align:center; color:#94a3b8; padding:24px;
+    background:#fafbfc; border:1px dashed var(--c-line); border-radius:8px;
+    font-size:13px;
+  }
+
+  /* status badge */
+  .status-badge {
+    display:inline-block; padding:3px 10px; border-radius:12px;
+    font-size:12px; font-weight:600; letter-spacing:.5px;
+  }
+  .status-badge.draft     { background:#fff8ec; color:#92400e; border:1px solid #f5d99a; }
+  .status-badge.submitted { background:#e8f5e9; color:#137333; border:1px solid #b6dcb9; }
+  .status-badge.empty     { background:#f0f1f3; color:#64748b; border:1px solid #d8dee6; }
+
+  /* workday table (read-only) */
+  table.wd {
+    width:100%; border-collapse:collapse;
+    background:#fff; border:1px solid #2b2b2b;
+    font-size:12.5px; table-layout:fixed;
+  }
+  table.wd th, table.wd td {
+    padding:6px 6px; border-right:1px solid #c8ced6; border-bottom:1px solid #c8ced6;
+    word-break:break-word; white-space:normal; vertical-align:middle;
+  }
+  table.wd th:last-child, table.wd td:last-child { border-right:none; }
+  table.wd thead th {
+    background:#2b2b2b; color:#fff; font-size:12px;
+    line-height:1.35; text-align:center;
+    border-right:1px solid #555; border-bottom:1px solid #2b2b2b;
+  }
+  table.wd thead th:last-child { border-right:none; }
+  table.wd tr.category-row td {
     color:#fff; font-weight:700; font-size:14px;
-    padding:8px 12px;
-    text-align:left;
+    padding:8px 12px; text-align:left;
     border-right:1px solid rgba(255,255,255,.25);
     border-bottom:1px solid #c8ced6;
   }
-  .workday-table tr.category-row td:last-child { border-right:none; }
-  .workday-table tr.cat-meeting  td { background:#e89c3c; }
-  .workday-table tr.cat-service  td { background:#d75b5b; }
-  .workday-table tr.cat-web      td { background:#1f4486; }
-  .workday-table tr.cat-project  td { background:#26195e; }
-  .workday-table tr.cat-internal td { background:#4a78d8; }
-  .workday-table tr.cat-pending  td { background:#9a9a9a; }
-  .workday-table tbody tr.blank td { height:30px; background:#fff; }
-  .workday-table tbody tr.blank:hover td { background:#fbfcfe; }
-  a { color:var(--c-primary); text-decoration:none; word-break:break-all; }
-  a:hover { text-decoration:underline; }
-  .toc {
+  table.wd tr.category-row td:last-child { border-right:none; }
+  table.wd tr.cat-meeting  td { background:#e89c3c; }
+  table.wd tr.cat-service  td { background:#d75b5b; }
+  table.wd tr.cat-web      td { background:#1f4486; }
+  table.wd tr.cat-project  td { background:#26195e; }
+  table.wd tr.cat-internal td { background:#4a78d8; }
+  table.wd tr.cat-pending  td { background:#9a9a9a; }
+  table.wd tbody tr.item td { background:#fff; }
+  table.wd tbody tr.item:hover td { background:#fbfcfe; }
+  table.wd td.num { text-align:right; }
+  table.wd td.center, table.wd th.center { text-align:center; }
+  table.wd .empty-cat td {
+    background:#fafbfc; color:#94a3b8; text-align:center;
+    font-size:12px; padding:8px;
+  }
+
+  /* col widths (與個人頁一致) */
+  table.wd colgroup col.c-case   { width:13%; }
+  table.wd colgroup col.c-type   { width:5%;  }
+  table.wd colgroup col.c-date   { width:7%;  }
+  table.wd colgroup col.c-hour   { width:5%;  }
+  table.wd colgroup col.c-plugin { width:4%;  }
+  table.wd colgroup col.c-prog   { width:5%;  }
+  table.wd colgroup col.c-note   { width:24%; }
+
+  /* history list */
+  .history-item {
     background:#fff; border:1px solid var(--c-line);
-    border-radius:8px; padding:14px 18px; margin-bottom:24px;
+    border-radius:8px; margin-bottom:10px; overflow:hidden;
   }
-  .toc ol { padding-left:22px; margin:6px 0; columns:2; -webkit-columns:2; }
-  .toc li { margin-bottom:3px; font-size:14px; }
-  @media (max-width:720px) {
-    .toc ol { columns:1; }
-    header h1 { font-size:21px; }
+  .history-item > summary {
+    cursor:pointer; padding:12px 16px; list-style:none;
+    display:flex; align-items:center; gap:12px;
+    font-weight:600; color:var(--c-primary);
+    user-select:none;
   }
+  .history-item > summary::-webkit-details-marker { display:none; }
+  .history-item > summary::before {
+    content:"▶"; font-size:11px; color:#94a3b8;
+    transition:transform .2s;
+  }
+  .history-item[open] > summary::before { transform:rotate(90deg); }
+  .history-item > summary:hover { background:var(--c-soft); }
+  .history-item .h-date { font-size:15px; }
+  .history-item .h-meta { margin-left:auto; font-size:12px; color:#64748b; font-weight:400; }
+  .history-item .h-body { padding:12px 16px 16px; border-top:1px solid var(--c-line); }
+
+  /* modal */
+  .modal-mask {
+    display:none; position:fixed; inset:0;
+    background:rgba(15,23,42,.45); z-index:100;
+    align-items:center; justify-content:center;
+  }
+  .modal-mask.show { display:flex; }
+  .modal {
+    background:#fff; border-radius:10px; padding:22px 24px;
+    width:min(520px, 92vw); box-shadow:0 12px 40px rgba(0,0,0,.25);
+  }
+  .modal h3 { margin:0 0 12px; color:var(--c-primary); }
+  .modal label { display:block; font-size:13px; color:#475569; margin:10px 0 4px; }
+  .modal input[type=text], .modal input[type=url] {
+    width:100%; padding:8px 10px; border:1px solid var(--c-line);
+    border-radius:6px; font:inherit;
+  }
+  .modal .modal-msg { font-size:13px; margin-top:10px; min-height:1.4em; }
+  .modal .modal-actions {
+    display:flex; gap:8px; justify-content:flex-end; margin-top:16px;
+    flex-wrap:wrap;
+  }
+  .modal .hint {
+    background:#f1f5f9; padding:10px 12px; border-radius:6px;
+    font-size:12.5px; line-height:1.6; color:#475569; margin-top:10px;
+  }
+  .modal .hint code { background:#fff; padding:1px 5px; border-radius:3px; }
+
   @media print {
     body { background:#fff; }
     header { box-shadow:none; }
-    table { box-shadow:none; }
+    .sync-bar, .page-nav, .tab-nav, .modal-mask, .btn { display:none !important; }
+    table.wd { box-shadow:none; }
+  }
+  @media (max-width: 900px) {
+    .wrap { padding:16px 12px 60px; }
+    header { padding:18px 18px 14px; }
+    header h1 { font-size:20px; }
+    table.wd { font-size:11.5px; }
   }
 </style>
 </head>
@@ -156,73 +258,351 @@
 </nav>
 
 <header>
-  <h1>設計部 工作日報</h1>
-  <div class="meta">範本來源：工作日報.xlsx（工作表：20250602） ｜ 空白填寫範本</div>
+  <h1>設計部 工作日報 - 多人檢視</h1>
+  <div class="meta">唯讀模式 ｜ 編輯請至各自的個人日報頁</div>
 </header>
 
-<section class="toc" id="toc">
-  <strong>目錄</strong>
-  <ol>
-    <li><a href="#s1">會議</a></li>
-    <li><a href="#s2">前台客服</a></li>
-    <li><a href="#s3">網站建置</a></li>
-    <li><a href="#s4">專案</a></li>
-    <li><a href="#s5">內部協助</a></li>
-    <li><a href="#s6">待處理項目</a></li>
-  </ol>
-</section>
-
-<p class="daily-tip">欄位定義：案件名稱 ・ 性質（如：直派/聯合/內部…） ・ 派案日期 ・ 預定完成日期 ・ 開始製作日期 ・ 實際完成日期 ・ 預計總工時 ・ 今日工時 ・ 插件 ・ 進度（%） ・ 進度說明。</p>
-
-<table class="workday-table">
-  <colgroup>
-    <col class="c-case">
-    <col class="c-type">
-    <col class="c-date">
-    <col class="c-date">
-    <col class="c-date">
-    <col class="c-date">
-    <col class="c-hour">
-    <col class="c-hour">
-    <col class="c-plugin">
-    <col class="c-prog">
-    <col class="c-note">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>案件</th><th>性質</th><th>派案日期</th><th>預定完成日期</th><th>開始製作日期</th>
-      <th>實際完成日期</th><th>預計總工時</th><th>今日工時</th><th>插件</th><th>進度</th><th>進度說明</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr class="category-row cat-meeting" id="s1"><td colspan="11">會議</td></tr>
-    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-
-    <tr class="category-row cat-service" id="s2"><td colspan="11">前台客服</td></tr>
-    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-
-    <tr class="category-row cat-web" id="s3"><td colspan="11">網站建置</td></tr>
-    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-
-    <tr class="category-row cat-project" id="s4"><td colspan="11">專案</td></tr>
-    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-
-    <tr class="category-row cat-internal" id="s5"><td colspan="11">內部協助</td></tr>
-    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-
-    <tr class="category-row cat-pending" id="s6"><td colspan="11">待處理項目</td></tr>
-    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-  </tbody>
-</table>
-
-<p style="text-align:center;color:#888;font-size:12px;margin-top:40px;">— 工作日報 ・由 Design_Department.html 拆分 ・範本來源：工作日報.xlsx —</p>
-
+<div class="sync-bar">
+  <div>雲端狀態：<span class="status" id="syncStatus" data-level="info">尚未設定</span></div>
+  <div class="btns">
+    <button class="btn" id="btnReload" type="button">重新讀取</button>
+    <button class="btn" id="btnSetup"  type="button">設定雲端</button>
+  </div>
 </div>
+
+<nav class="tab-nav" id="tabNav" aria-label="檢視切換">
+  <button type="button" class="tab-btn active" data-tab="all">全部</button>
+  <button type="button" class="tab-btn" data-tab="Jimmy">Jimmy</button>
+  <button type="button" class="tab-btn" data-tab="Joey">Joey</button>
+  <button type="button" class="tab-btn" data-tab="Cat">Cat</button>
+  <button type="button" class="tab-btn" data-tab="Mavis">Mavis</button>
+</nav>
+
+<div id="content"></div>
+
+<!-- 設定雲端 Modal -->
+<div class="modal-mask" id="setupModal">
+  <div class="modal">
+    <h3>設定雲端同步</h3>
+    <label for="setupUrl">Apps Script Web App URL（/exec 結尾）</label>
+    <input type="url" id="setupUrl" placeholder="https://script.google.com/macros/s/.../exec">
+    <div class="hint">
+      由 <code>cowell.design.department@gmail.com</code> 部署的 Apps Script Web App URL。<br>
+      此設定與個人日報頁共用同一個 localStorage,任一頁設定後其他頁自動沿用。
+    </div>
+    <div class="modal-msg" id="setupMsg"></div>
+    <div class="modal-actions">
+      <button class="btn"        id="setupClear" type="button">清除設定</button>
+      <button class="btn"        id="setupTest"  type="button">在新分頁測試</button>
+      <button class="btn"        id="setupCancel" type="button">取消</button>
+      <button class="btn primary" id="setupSave"  type="button">儲存並連線</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var CONFIG_KEY = 'workday_config_v1';
+  var DESIGNERS = ['Jimmy', 'Joey', 'Cat', 'Mavis'];
+
+  var CATEGORIES = [
+    { key:'會議',     cls:'cat-meeting'  },
+    { key:'前台客服', cls:'cat-service'  },
+    { key:'網站建置', cls:'cat-web'      },
+    { key:'專案',     cls:'cat-project'  },
+    { key:'內部協助', cls:'cat-internal' },
+    { key:'待處理項目', cls:'cat-pending' }
+  ];
+
+  var COLUMNS = [
+    { key:'case',       label:'案件',       cls:''       },
+    { key:'type',       label:'性質',       cls:''       },
+    { key:'assigned',   label:'派案日期',   cls:'center' },
+    { key:'dueDate',    label:'預定完成日期', cls:'center' },
+    { key:'startDate',  label:'開始製作日期', cls:'center' },
+    { key:'doneDate',   label:'實際完成日期', cls:'center' },
+    { key:'estHours',   label:'預計總工時', cls:'num'    },
+    { key:'todayHours', label:'今日工時',   cls:'num'    },
+    { key:'plugin',     label:'插件',       cls:'center' },
+    { key:'progress',   label:'進度(%)',    cls:'num'    },
+    { key:'note',       label:'進度說明',   cls:''       }
+  ];
+
+  var CONFIG = loadConfig();
+  var DATA = {}; // { Jimmy: { "YYYY-MM-DD": {status, items, ...} }, ... }
+  var CURRENT_TAB = 'all';
+
+  function $(id){ return document.getElementById(id); }
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];
+    });
+  }
+  function todayKey(){
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function formatDateLabel(k){
+    var p = k.split('-'); if (p.length < 3) return k;
+    var d = new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10));
+    var wd = ['日','一','二','三','四','五','六'][d.getDay()];
+    return p[0] + '/' + p[1] + '/' + p[2] + '（' + wd + '）';
+  }
+  function loadConfig(){
+    try { var s = localStorage.getItem(CONFIG_KEY); if (s) return JSON.parse(s); } catch(e){}
+    return { url: '' };
+  }
+  function saveConfig(){ localStorage.setItem(CONFIG_KEY, JSON.stringify(CONFIG)); }
+
+  function showStatus(text, level){
+    var el = $('syncStatus'); if (!el) return;
+    el.textContent = text; el.dataset.level = level || 'info';
+  }
+  function setSetupMsg(text, color){
+    var el = $('setupMsg'); if (!el) return;
+    el.textContent = text || ''; el.style.color = color || '#64748b';
+  }
+
+  // ============ render ============
+  function badgeHtml(rec){
+    if (!rec) return '<span class="status-badge empty">未建立</span>';
+    if (rec.status === 'submitted') {
+      return '<span class="status-badge submitted">已送出 ' + escapeHtml(rec.submittedAt || '') + '</span>';
+    }
+    if (rec.status === 'draft') {
+      return '<span class="status-badge draft">草稿 ' + escapeHtml(rec.updatedAt || '') + '</span>';
+    }
+    return '<span class="status-badge empty">未建立</span>';
+  }
+
+  function renderTable(items){
+    var grouped = {};
+    CATEGORIES.forEach(function(c){ grouped[c.key] = []; });
+    (items || []).forEach(function(it){
+      var c = it.category || '會議';
+      if (!grouped[c]) grouped[c] = [];
+      grouped[c].push(it);
+    });
+
+    var thead = '<thead><tr>' +
+      COLUMNS.map(function(c){ return '<th class="' + c.cls + '">' + c.label + '</th>'; }).join('') +
+      '</tr></thead>';
+
+    var colgroup = '<colgroup>' +
+      '<col class="c-case"><col class="c-type">' +
+      '<col class="c-date"><col class="c-date"><col class="c-date"><col class="c-date">' +
+      '<col class="c-hour"><col class="c-hour">' +
+      '<col class="c-plugin"><col class="c-prog"><col class="c-note">' +
+      '</colgroup>';
+
+    var body = '';
+    CATEGORIES.forEach(function(cat){
+      var rows = grouped[cat.key] || [];
+      body += '<tr class="category-row ' + cat.cls + '"><td colspan="' + COLUMNS.length + '">' +
+        escapeHtml(cat.key) + '</td></tr>';
+      if (rows.length === 0) {
+        body += '<tr class="empty-cat"><td colspan="' + COLUMNS.length + '">（無）</td></tr>';
+      } else {
+        rows.forEach(function(it){
+          body += '<tr class="item">';
+          COLUMNS.forEach(function(col){
+            var val = it[col.key] == null ? '' : it[col.key];
+            body += '<td class="' + col.cls + '">' + escapeHtml(val) + '</td>';
+          });
+          body += '</tr>';
+        });
+      }
+    });
+
+    return '<table class="wd">' + colgroup + thead + '<tbody>' + body + '</tbody></table>';
+  }
+
+  function renderOverview(){
+    var today = todayKey();
+    var html = '';
+    DESIGNERS.forEach(function(name){
+      var data = DATA[name] || {};
+      var rec = data[today];
+      html += '<section class="card">';
+      html += '<h2><span>' + escapeHtml(name) + '</span>' +
+              '<span class="card-meta">' + escapeHtml(formatDateLabel(today)) + '</span>' +
+              badgeHtml(rec) + '</h2>';
+      if (rec && rec.items && rec.items.length > 0) {
+        html += renderTable(rec.items);
+      } else {
+        html += '<div class="empty-msg">' + escapeHtml(name) + ' 今日尚未建立日報</div>';
+      }
+      html += '</section>';
+    });
+    return html;
+  }
+
+  function renderDesigner(name){
+    var data = DATA[name] || {};
+    var today = todayKey();
+    var todayRec = data[today];
+    var html = '';
+
+    // 今日
+    html += '<section class="card">';
+    html += '<h2><span>' + escapeHtml(name) + ' 今日日報</span>' +
+            '<span class="card-meta">' + escapeHtml(formatDateLabel(today)) + '</span>' +
+            badgeHtml(todayRec) + '</h2>';
+    if (todayRec && todayRec.items && todayRec.items.length > 0) {
+      html += renderTable(todayRec.items);
+    } else {
+      html += '<div class="empty-msg">今日尚未建立日報</div>';
+    }
+    html += '</section>';
+
+    // 歷史
+    var keys = Object.keys(data).filter(function(k){ return k !== today; }).sort().reverse();
+    html += '<section class="card">';
+    html += '<h2><span>' + escapeHtml(name) + ' 歷史日報</span></h2>';
+    if (keys.length === 0) {
+      html += '<div class="empty-msg">尚未有歷史日報</div>';
+    } else {
+      keys.forEach(function(k){
+        var rec = data[k];
+        var count = (rec.items || []).length;
+        html += '<details class="history-item">';
+        html += '<summary>' +
+                '<span class="h-date">' + escapeHtml(formatDateLabel(k)) + '</span>' +
+                badgeHtml(rec) +
+                '<span class="h-meta">共 ' + count + ' 項</span>' +
+                '</summary>';
+        html += '<div class="h-body">' + renderTable(rec.items || []) + '</div>';
+        html += '</details>';
+      });
+    }
+    html += '</section>';
+
+    return html;
+  }
+
+  function renderContent(){
+    if (CURRENT_TAB === 'all') {
+      $('content').innerHTML = renderOverview();
+    } else {
+      $('content').innerHTML = renderDesigner(CURRENT_TAB);
+    }
+  }
+
+  // ============ fetch ============
+  async function fetchOne(name){
+    var url = CONFIG.url + (CONFIG.url.indexOf('?') >= 0 ? '&' : '?') + 'author=' + encodeURIComponent(name);
+    var res = await fetch(url);
+    if (!res.ok) throw new Error(name + ' HTTP ' + res.status);
+    var json = await res.json();
+    if (!json.ok) throw new Error(name + ' ' + (json.error || '伺服器錯誤'));
+    return json.data || {};
+  }
+
+  async function fetchAll(){
+    if (!CONFIG.url) {
+      showStatus('尚未設定雲端，請點右上「設定雲端」', 'info');
+      return;
+    }
+    showStatus('連線中…', 'busy');
+    try {
+      var results = await Promise.all(DESIGNERS.map(fetchOne));
+      DESIGNERS.forEach(function(name, i){ DATA[name] = results[i]; });
+      renderContent();
+      var t = new Date();
+      var hh = String(t.getHours()).padStart(2,'0'), mm = String(t.getMinutes()).padStart(2,'0');
+      showStatus('已同步 ' + hh + ':' + mm, 'ok');
+    } catch(err){
+      showStatus('連線失敗：' + err.message, 'err');
+    }
+  }
+
+  // ============ setup modal ============
+  function openSetup(){
+    $('setupUrl').value = CONFIG.url || '';
+    setSetupMsg('');
+    $('setupModal').classList.add('show');
+  }
+  function closeSetup(){ $('setupModal').classList.remove('show'); }
+  async function setupSave(){
+    var url = ($('setupUrl').value || '').trim();
+    if (!url) { setSetupMsg('請輸入 URL', '#dc2626'); return; }
+    if (url.indexOf('script.google.com') < 0) {
+      setSetupMsg('⚠ URL 不是 Apps Script Web App 網址', '#dc2626'); return;
+    }
+    if (/\/dev$/.test(url)) {
+      setSetupMsg('⚠ 此為 /dev 開發網址，請改用 /exec 結尾的正式網址', '#dc2626'); return;
+    }
+    if (!/\/exec$/.test(url)) {
+      setSetupMsg('⚠ URL 應以 /exec 結尾', '#dc2626'); return;
+    }
+    setSetupMsg('測試中…', '#92400e');
+    try {
+      var testUrl = url + '?author=' + encodeURIComponent(DESIGNERS[0]);
+      var res = await fetch(testUrl, { method:'GET', redirect:'follow' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var text = await res.text();
+      var json;
+      try { json = JSON.parse(text); }
+      catch(e){
+        if (text.indexOf('<html') >= 0) throw new Error('收到 HTML 而非 JSON，存取權可能未設為「知道連結的任何人」');
+        throw new Error('回應非 JSON');
+      }
+      if (!json.ok) throw new Error(json.error || '伺服器回覆 ok=false');
+      CONFIG.url = url; saveConfig();
+      setSetupMsg('✓ 連線成功', '#065f46');
+      setTimeout(function(){ closeSetup(); fetchAll(); }, 600);
+    } catch(err){
+      var msg = err.message || String(err);
+      if (msg.indexOf('Failed to fetch') >= 0) {
+        msg = 'Failed to fetch — 通常代表：(1) URL 錯誤 (2) 存取權未設為「知道連結的任何人」 (3) 瀏覽器擴充功能擋下';
+      }
+      setSetupMsg('✗ ' + msg, '#dc2626');
+    }
+  }
+  function setupClear(){
+    if (!confirm('清除目前的雲端 URL？')) return;
+    CONFIG.url = ''; saveConfig();
+    showStatus('尚未設定雲端', 'info');
+    closeSetup();
+  }
+  function setupTest(){
+    var url = ($('setupUrl').value || '').trim();
+    if (!url) { setSetupMsg('請先貼上 URL', '#dc2626'); return; }
+    window.open(url + (url.indexOf('?')>=0?'&':'?') + 'author=' + encodeURIComponent(DESIGNERS[0]), '_blank');
+  }
+
+  // ============ tabs ============
+  function bindTabs(){
+    document.querySelectorAll('.tab-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        CURRENT_TAB = btn.dataset.tab;
+        renderContent();
+      });
+    });
+  }
+
+  // ============ init ============
+  document.addEventListener('DOMContentLoaded', function(){
+    $('btnReload').addEventListener('click', fetchAll);
+    $('btnSetup').addEventListener('click', openSetup);
+    $('setupSave').addEventListener('click', setupSave);
+    $('setupCancel').addEventListener('click', closeSetup);
+    $('setupClear').addEventListener('click', setupClear);
+    $('setupTest').addEventListener('click', setupTest);
+    $('setupModal').addEventListener('click', function(e){ if (e.target === $('setupModal')) closeSetup(); });
+
+    bindTabs();
+    renderContent();
+
+    if (CONFIG.url) {
+      fetchAll();
+    } else {
+      showStatus('尚未設定雲端，請點右上「設定雲端」', 'info');
+    }
+  });
+})();
+</script>
 </body>
 </html>
