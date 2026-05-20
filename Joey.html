@@ -273,7 +273,20 @@
     header h1 { font-size:20px; }
     table.wd { font-size:11.5px; }
   }
+  /* flatpickr 樣式覆寫 */
+  .flatpickr-calendar { font-weight:400; box-shadow:0 4px 18px rgba(15,23,42,.12); }
+  .flatpickr-weekday { font-weight:400; color:#94a3b8; }
+  .flatpickr-current-month, .flatpickr-current-month .cur-month, .flatpickr-current-month input.cur-year { font-weight:500; color:var(--c-primary); }
+  .flatpickr-day { font-weight:400; }
+  .flatpickr-day.today { border-color:var(--c-primary); color:var(--c-primary); }
+  .flatpickr-day.today:hover { background:var(--c-primary); color:#fff; border-color:var(--c-primary); }
+  .flatpickr-day.selected, .flatpickr-day.selected:hover, .flatpickr-day.startRange, .flatpickr-day.endRange {
+    background:var(--c-primary); border-color:var(--c-primary);
+  }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/zh.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -302,6 +315,7 @@
   <div>雲端狀態：<span class="status" id="syncStatus" data-level="info">尚未設定</span></div>
   <div class="btns">
     <button class="btn" id="btnReload" type="button">重新讀取</button>
+    <button class="btn" id="btnForceSync" type="button">強制同步</button>
     <button class="btn" id="btnExport" type="button">匯出 JSON</button>
   </div>
 </div>
@@ -519,8 +533,10 @@
             if (readonly) {
               body += '<td class="' + col.cls + '">' + escapeHtml(val) + '</td>';
             } else {
-              body += '<td class="' + col.cls + '"><input class="cell-input" draggable="false" type="' +
-                col.type +
+              body += '<td class="' + col.cls + '"><input class="cell-input' +
+                (col.type === 'date' ? ' date-input' : '') +
+                '" draggable="false" type="' +
+                (col.type === 'date' ? 'text' : col.type) +
                 '" data-key="' + col.key + '" value="' + escapeHtml(val) + '"></td>';
             }
           });
@@ -566,11 +582,21 @@
         scheduleAutoSave();
       });
     });
-    // 日期欄:點擊整格自動開啟原生日期選擇器(icon 已隱藏)
-    scope.querySelectorAll('input.cell-input[type="date"]').forEach(function(inp){
-      inp.addEventListener('click', function(){
-        if (typeof inp.showPicker === 'function') {
-          try { inp.showPicker(); } catch(e){}
+    // 日期欄:用 flatpickr 取代原生 picker,完全 CSS 可控
+    scope.querySelectorAll('input.date-input').forEach(function(inp){
+      if (typeof flatpickr !== 'function' || inp._fp) return;
+      inp._fp = flatpickr(inp, {
+        dateFormat: 'Y-m-d',
+        locale: (window.flatpickr && flatpickr.l10ns && flatpickr.l10ns.zh) ? 'zh' : 'default',
+        allowInput: true,
+        onChange: function(selectedDates, dateStr){
+          var tr = inp.closest('tr.item');
+          if (!tr) return;
+          var idx = parseInt(tr.dataset.idx, 10);
+          if (!todayItems[idx]) return;
+          todayItems[idx][inp.dataset.key] = dateStr;
+          saveDraft();
+          scheduleAutoSave();
         }
       });
     });
@@ -747,6 +773,16 @@
     }
   }
 
+  async function forceSync(){
+    if (!confirm('清除本機暫存資料並從雲端重新載入?\n(未送出的修改會遺失)')) return;
+    clearDraft();
+    try { localStorage.removeItem(CACHE_KEY); } catch(e){}
+    REMOTE = {};
+    todayItems = [];
+    renderAll();
+    await pullNow();
+  }
+
   async function pullNow(){
     showStatus('連線中…', 'busy');
     try {
@@ -799,6 +835,7 @@
     });
     $('btnReset').addEventListener('click', resetToday);
     $('btnReload').addEventListener('click', pullNow);
+    $('btnForceSync').addEventListener('click', forceSync);
     $('btnExport').addEventListener('click', exportJson);
 
     renderAll();
