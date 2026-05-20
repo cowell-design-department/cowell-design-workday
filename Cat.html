@@ -156,6 +156,8 @@
     text-align:inherit; color:inherit;
   }
   table.wd .cell-input:focus { background:#fff7d6; }
+  table.wd textarea.cell-input { resize:vertical; min-height:2.2em; line-height:1.4; vertical-align:top; overflow:hidden; }
+  table.wd td.multiline { white-space:pre-wrap; word-break:break-word; }
   table.wd .cell-input[type="date"] {
     font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
     font-weight:400; color-scheme:light;
@@ -374,11 +376,11 @@
     { key:'dueDate',    label:'預定完成日期', cls:'center', type:'date' },
     { key:'startDate',  label:'開始製作日期', cls:'center', type:'date' },
     { key:'doneDate',   label:'實際完成日期', cls:'center', type:'date' },
-    { key:'estHours',   label:'預計總工時', cls:'num',    type:'number' },
-    { key:'todayHours', label:'今日工時',   cls:'num',    type:'number' },
+    { key:'estHours',   label:'預計總工時', cls:'num',    type:'text' },
+    { key:'todayHours', label:'今日工時',   cls:'num',    type:'text' },
     { key:'plugin',     label:'插件',       cls:'center', type:'text' },
     { key:'progress',   label:'進度(%)',    cls:'num',    type:'number' },
-    { key:'note',       label:'進度說明',   cls:'',       type:'text' }
+    { key:'note',       label:'進度說明',   cls:'',       type:'text', multiline:true }
   ];
 
   // === 狀態 ===
@@ -531,7 +533,9 @@
           COLUMNS.forEach(function(col){
             var val = it[col.key] == null ? '' : it[col.key];
             if (readonly) {
-              body += '<td class="' + col.cls + '">' + escapeHtml(val) + '</td>';
+              body += '<td class="' + col.cls + (col.multiline ? ' multiline' : '') + '">' + escapeHtml(val) + '</td>';
+            } else if (col.multiline) {
+              body += '<td class="' + col.cls + '"><textarea class="cell-input" draggable="false" data-key="' + col.key + '" rows="2">' + escapeHtml(val) + '</textarea></td>';
             } else {
               body += '<td class="' + col.cls + '"><input class="cell-input' +
                 (col.type === 'date' ? ' date-input' : '') +
@@ -568,7 +572,7 @@
         delRow(idx);
       });
     });
-    scope.querySelectorAll('input.cell-input').forEach(function(inp){
+    scope.querySelectorAll('.cell-input').forEach(function(inp){
       inp.addEventListener('input', function(){
         var tr = inp.closest('tr.item');
         if (!tr) return;
@@ -581,6 +585,12 @@
         saveDraft();
         scheduleAutoSave();
       });
+    });
+    // textarea 自動長高
+    scope.querySelectorAll('textarea.cell-input').forEach(function(ta){
+      function autosize(){ ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px'; }
+      ta.addEventListener('input', autosize);
+      autosize();
     });
     // 日期欄:用 flatpickr 取代原生 picker,完全 CSS 可控
     scope.querySelectorAll('input.date-input').forEach(function(inp){

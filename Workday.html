@@ -166,6 +166,7 @@
     background:#fafbfc; color:#94a3b8; text-align:center;
     font-size:12px; padding:8px;
   }
+  table.wd td.multiline { white-space:pre-wrap; word-break:break-word; }
 
   /* col widths (與個人頁一致) */
   table.wd colgroup col.c-case   { width:13%; }
@@ -275,7 +276,7 @@
     { key:'todayHours', label:'今日工時',   cls:'num'    },
     { key:'plugin',     label:'插件',       cls:'center' },
     { key:'progress',   label:'進度(%)',    cls:'num'    },
-    { key:'note',       label:'進度說明',   cls:''       }
+    { key:'note',       label:'進度說明',   cls:'',       multiline:true }
   ];
 
   var DATA = {}; // { Jimmy: { "YYYY-MM-DD": {status, items, ...} }, ... }
@@ -346,7 +347,7 @@
           body += '<tr class="item">';
           COLUMNS.forEach(function(col){
             var val = it[col.key] == null ? '' : it[col.key];
-            body += '<td class="' + col.cls + '">' + escapeHtml(val) + '</td>';
+            body += '<td class="' + col.cls + (col.multiline ? ' multiline' : '') + '">' + escapeHtml(val) + '</td>';
           });
           body += '</tr>';
         });
