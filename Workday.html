@@ -21,7 +21,7 @@
     color:var(--c-text); margin:0; padding:0;
     background:#fafbfc; line-height:1.7;
   }
-  .wrap { max-width:1280px; margin:0 auto; padding:24px 20px 80px; }
+  .wrap { max-width:1360px; margin:0 auto; padding:24px 20px 80px; }
   a { color:var(--c-primary); text-decoration:none; word-break:break-all; }
   a:hover { text-decoration:underline; }
   .page-nav {
@@ -73,8 +73,6 @@
     transition:background .15s,border-color .15s;
   }
   .btn:hover { background:var(--c-soft); }
-  .btn.primary { background:var(--c-primary); border-color:var(--c-primary); color:#fff; }
-  .btn.primary:hover { background:#16395a; }
 
   /* tab nav */
   .tab-nav {
@@ -200,38 +198,10 @@
   .history-item .h-meta { margin-left:auto; font-size:12px; color:#64748b; font-weight:400; }
   .history-item .h-body { padding:12px 16px 16px; border-top:1px solid var(--c-line); }
 
-  /* modal */
-  .modal-mask {
-    display:none; position:fixed; inset:0;
-    background:rgba(15,23,42,.45); z-index:100;
-    align-items:center; justify-content:center;
-  }
-  .modal-mask.show { display:flex; }
-  .modal {
-    background:#fff; border-radius:10px; padding:22px 24px;
-    width:min(520px, 92vw); box-shadow:0 12px 40px rgba(0,0,0,.25);
-  }
-  .modal h3 { margin:0 0 12px; color:var(--c-primary); }
-  .modal label { display:block; font-size:13px; color:#475569; margin:10px 0 4px; }
-  .modal input[type=text], .modal input[type=url] {
-    width:100%; padding:8px 10px; border:1px solid var(--c-line);
-    border-radius:6px; font:inherit;
-  }
-  .modal .modal-msg { font-size:13px; margin-top:10px; min-height:1.4em; }
-  .modal .modal-actions {
-    display:flex; gap:8px; justify-content:flex-end; margin-top:16px;
-    flex-wrap:wrap;
-  }
-  .modal .hint {
-    background:#f1f5f9; padding:10px 12px; border-radius:6px;
-    font-size:12.5px; line-height:1.6; color:#475569; margin-top:10px;
-  }
-  .modal .hint code { background:#fff; padding:1px 5px; border-radius:3px; }
-
   @media print {
     body { background:#fff; }
     header { box-shadow:none; }
-    .sync-bar, .page-nav, .tab-nav, .modal-mask, .btn { display:none !important; }
+    .sync-bar, .page-nav, .tab-nav, .btn { display:none !important; }
     table.wd { box-shadow:none; }
   }
   @media (max-width: 900px) {
@@ -263,10 +233,9 @@
 </header>
 
 <div class="sync-bar">
-  <div>雲端狀態：<span class="status" id="syncStatus" data-level="info">尚未設定</span></div>
+  <div>狀態：<span class="status" id="syncStatus" data-level="info">準備中…</span></div>
   <div class="btns">
     <button class="btn" id="btnReload" type="button">重新讀取</button>
-    <button class="btn" id="btnSetup"  type="button">設定雲端</button>
   </div>
 </div>
 
@@ -280,29 +249,10 @@
 
 <div id="content"></div>
 
-<!-- 設定雲端 Modal -->
-<div class="modal-mask" id="setupModal">
-  <div class="modal">
-    <h3>設定雲端同步</h3>
-    <label for="setupUrl">Apps Script Web App URL（/exec 結尾）</label>
-    <input type="url" id="setupUrl" placeholder="https://script.google.com/macros/s/.../exec">
-    <div class="hint">
-      由 <code>cowell.design.department@gmail.com</code> 部署的 Apps Script Web App URL。<br>
-      此設定與個人日報頁共用同一個 localStorage,任一頁設定後其他頁自動沿用。
-    </div>
-    <div class="modal-msg" id="setupMsg"></div>
-    <div class="modal-actions">
-      <button class="btn"        id="setupClear" type="button">清除設定</button>
-      <button class="btn"        id="setupTest"  type="button">在新分頁測試</button>
-      <button class="btn"        id="setupCancel" type="button">取消</button>
-      <button class="btn primary" id="setupSave"  type="button">儲存並連線</button>
-    </div>
-  </div>
-</div>
-
 <script>
 (function(){
-  var CONFIG_KEY = 'workday_config_v1';
+  // Apps Script Web App URL — 公開唯讀檢視用
+  var CLOUD_URL = 'https://script.google.com/macros/s/AKfycbzgZZx6h_CGBHR3UusKInOa7E_lyuZtWKX_vn_4LUT2f-bl-huQzg2CKwE8ErcGtOAH/exec';
   var DESIGNERS = ['Jimmy', 'Joey', 'Cat', 'Mavis'];
 
   var CATEGORIES = [
@@ -328,7 +278,6 @@
     { key:'note',       label:'進度說明',   cls:''       }
   ];
 
-  var CONFIG = loadConfig();
   var DATA = {}; // { Jimmy: { "YYYY-MM-DD": {status, items, ...} }, ... }
   var CURRENT_TAB = 'all';
 
@@ -348,19 +297,9 @@
     var wd = ['日','一','二','三','四','五','六'][d.getDay()];
     return p[0] + '/' + p[1] + '/' + p[2] + '（' + wd + '）';
   }
-  function loadConfig(){
-    try { var s = localStorage.getItem(CONFIG_KEY); if (s) return JSON.parse(s); } catch(e){}
-    return { url: '' };
-  }
-  function saveConfig(){ localStorage.setItem(CONFIG_KEY, JSON.stringify(CONFIG)); }
-
   function showStatus(text, level){
     var el = $('syncStatus'); if (!el) return;
     el.textContent = text; el.dataset.level = level || 'info';
-  }
-  function setSetupMsg(text, color){
-    var el = $('setupMsg'); if (!el) return;
-    el.textContent = text || ''; el.style.color = color || '#64748b';
   }
 
   // ============ render ============
@@ -490,7 +429,7 @@
 
   // ============ fetch ============
   async function fetchOne(name){
-    var url = CONFIG.url + (CONFIG.url.indexOf('?') >= 0 ? '&' : '?') + 'author=' + encodeURIComponent(name);
+    var url = CLOUD_URL + '?author=' + encodeURIComponent(name);
     var res = await fetch(url);
     if (!res.ok) throw new Error(name + ' HTTP ' + res.status);
     var json = await res.json();
@@ -499,10 +438,6 @@
   }
 
   async function fetchAll(){
-    if (!CONFIG.url) {
-      showStatus('尚未設定雲端，請點右上「設定雲端」', 'info');
-      return;
-    }
     showStatus('連線中…', 'busy');
     try {
       var results = await Promise.all(DESIGNERS.map(fetchOne));
@@ -514,61 +449,6 @@
     } catch(err){
       showStatus('連線失敗：' + err.message, 'err');
     }
-  }
-
-  // ============ setup modal ============
-  function openSetup(){
-    $('setupUrl').value = CONFIG.url || '';
-    setSetupMsg('');
-    $('setupModal').classList.add('show');
-  }
-  function closeSetup(){ $('setupModal').classList.remove('show'); }
-  async function setupSave(){
-    var url = ($('setupUrl').value || '').trim();
-    if (!url) { setSetupMsg('請輸入 URL', '#dc2626'); return; }
-    if (url.indexOf('script.google.com') < 0) {
-      setSetupMsg('⚠ URL 不是 Apps Script Web App 網址', '#dc2626'); return;
-    }
-    if (/\/dev$/.test(url)) {
-      setSetupMsg('⚠ 此為 /dev 開發網址，請改用 /exec 結尾的正式網址', '#dc2626'); return;
-    }
-    if (!/\/exec$/.test(url)) {
-      setSetupMsg('⚠ URL 應以 /exec 結尾', '#dc2626'); return;
-    }
-    setSetupMsg('測試中…', '#92400e');
-    try {
-      var testUrl = url + '?author=' + encodeURIComponent(DESIGNERS[0]);
-      var res = await fetch(testUrl, { method:'GET', redirect:'follow' });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      var text = await res.text();
-      var json;
-      try { json = JSON.parse(text); }
-      catch(e){
-        if (text.indexOf('<html') >= 0) throw new Error('收到 HTML 而非 JSON，存取權可能未設為「知道連結的任何人」');
-        throw new Error('回應非 JSON');
-      }
-      if (!json.ok) throw new Error(json.error || '伺服器回覆 ok=false');
-      CONFIG.url = url; saveConfig();
-      setSetupMsg('✓ 連線成功', '#065f46');
-      setTimeout(function(){ closeSetup(); fetchAll(); }, 600);
-    } catch(err){
-      var msg = err.message || String(err);
-      if (msg.indexOf('Failed to fetch') >= 0) {
-        msg = 'Failed to fetch — 通常代表：(1) URL 錯誤 (2) 存取權未設為「知道連結的任何人」 (3) 瀏覽器擴充功能擋下';
-      }
-      setSetupMsg('✗ ' + msg, '#dc2626');
-    }
-  }
-  function setupClear(){
-    if (!confirm('清除目前的雲端 URL？')) return;
-    CONFIG.url = ''; saveConfig();
-    showStatus('尚未設定雲端', 'info');
-    closeSetup();
-  }
-  function setupTest(){
-    var url = ($('setupUrl').value || '').trim();
-    if (!url) { setSetupMsg('請先貼上 URL', '#dc2626'); return; }
-    window.open(url + (url.indexOf('?')>=0?'&':'?') + 'author=' + encodeURIComponent(DESIGNERS[0]), '_blank');
   }
 
   // ============ tabs ============
@@ -586,21 +466,9 @@
   // ============ init ============
   document.addEventListener('DOMContentLoaded', function(){
     $('btnReload').addEventListener('click', fetchAll);
-    $('btnSetup').addEventListener('click', openSetup);
-    $('setupSave').addEventListener('click', setupSave);
-    $('setupCancel').addEventListener('click', closeSetup);
-    $('setupClear').addEventListener('click', setupClear);
-    $('setupTest').addEventListener('click', setupTest);
-    $('setupModal').addEventListener('click', function(e){ if (e.target === $('setupModal')) closeSetup(); });
-
     bindTabs();
     renderContent();
-
-    if (CONFIG.url) {
-      fetchAll();
-    } else {
-      showStatus('尚未設定雲端，請點右上「設定雲端」', 'info');
-    }
+    fetchAll();
   });
 })();
 </script>
