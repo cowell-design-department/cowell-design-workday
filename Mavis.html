@@ -285,7 +285,6 @@
   <div class="btns">
     <button class="btn" id="btnReload" type="button">重新讀取</button>
     <button class="btn" id="btnExport" type="button">匯出 JSON</button>
-    <button class="btn" id="btnSetup"  type="button">設定雲端</button>
   </div>
 </div>
 
@@ -317,33 +316,13 @@
 
 </div>
 
-<!-- 設定雲端 Modal -->
-<div class="modal-mask" id="setupModal">
-  <div class="modal">
-    <h3>設定雲端同步</h3>
-    <label for="setupUrl">Apps Script Web App URL（/exec 結尾）</label>
-    <input type="url" id="setupUrl" placeholder="https://script.google.com/macros/s/.../exec">
-    <div class="hint">
-      由 <code>cowell.design.department@gmail.com</code> 部署的 Apps Script Web App URL。<br>
-      部署步驟參考 <code>工作日報-AppsScript.gs</code> 檔首註解。
-    </div>
-    <div class="modal-msg" id="setupMsg"></div>
-    <div class="modal-actions">
-      <button class="btn"        id="setupClear" type="button">清除設定</button>
-      <button class="btn"        id="setupTest"  type="button">在新分頁測試</button>
-      <button class="btn"        id="setupCancel" type="button">取消</button>
-      <button class="btn primary" id="setupSave"  type="button">儲存並連線</button>
-    </div>
-  </div>
-</div>
-
 <script>
 (function(){
   // === 設計師名稱（每個檔案唯一不同的地方）===
   var AUTHOR = 'Mavis';
 
   // === 常數 ===
-  var CONFIG_KEY = 'workday_config_v1';
+  var CLOUD_URL  = 'https://script.google.com/macros/s/AKfycbzgZZx6h_CGBHR3UusKInOa7E_lyuZtWKX_vn_4LUT2f-bl-huQzg2CKwE8ErcGtOAH/exec';
   var DRAFT_KEY  = 'workday_draft_' + AUTHOR + '_v1';
   var CACHE_KEY  = 'workday_cache_' + AUTHOR + '_v1';
 
@@ -371,7 +350,6 @@
   ];
 
   // === 狀態 ===
-  var CONFIG = loadConfig();
   var REMOTE = loadCache();   // { "YYYY-MM-DD": { status, submittedAt, updatedAt, items:[] } }
   var TODAY  = todayKey();
   var todayItems = loadDraftOrFromRemote();
@@ -396,11 +374,6 @@
     var wd = ['日','一','二','三','四','五','六'][d.getDay()];
     return p[0] + '/' + p[1] + '/' + p[2] + '（' + wd + '）';
   }
-  function loadConfig(){
-    try { var s = localStorage.getItem(CONFIG_KEY); if (s) return JSON.parse(s); } catch(e){}
-    return { url: '' };
-  }
-  function saveConfig(){ localStorage.setItem(CONFIG_KEY, JSON.stringify(CONFIG)); }
   function loadCache(){
     try { var s = localStorage.getItem(CACHE_KEY); if (s) return JSON.parse(s) || {}; } catch(e){}
     return {};
@@ -431,11 +404,6 @@
     var el = $('syncStatus'); if (!el) return;
     el.textContent = text; el.dataset.level = level || 'info';
   }
-  function setSetupMsg(text, color){
-    var el = $('setupMsg'); if (!el) return;
-    el.textContent = text || ''; el.style.color = color || '#64748b';
-  }
-
   // ============ render ============
   function renderAll(){
     renderToday();
@@ -615,23 +583,17 @@
 
   // ============ cloud sync ============
   function scheduleAutoSave(){
-    if (!CONFIG.url) return;
     showStatus('待暫存…', 'busy');
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(function(){ doSave('save', true); }, 1200);
   }
 
   async function doSave(action, silent){
-    if (!CONFIG.url) {
-      showStatus('尚未設定雲端', 'info');
-      if (!silent) alert('請先點右上「設定雲端」貼上 Apps Script URL');
-      return false;
-    }
     if (savingNow) { pendingSave = true; return false; }
     savingNow = true; pendingSave = false;
     showStatus(action === 'submit' ? '送出中…' : '儲存中…', 'busy');
     try {
-      var res = await fetch(CONFIG.url, {
+      var res = await fetch(CLOUD_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
@@ -672,10 +634,9 @@
   }
 
   async function pullNow(){
-    if (!CONFIG.url) { showStatus('尚未設定雲端', 'info'); return; }
     showStatus('連線中…', 'busy');
     try {
-      var url = CONFIG.url + (CONFIG.url.indexOf('?') >= 0 ? '&' : '?') + 'author=' + encodeURIComponent(AUTHOR);
+      var url = CLOUD_URL + '?author=' + encodeURIComponent(AUTHOR);
       var res = await fetch(url);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       var json = await res.json();
@@ -711,61 +672,6 @@
     URL.revokeObjectURL(url);
   }
 
-  // ============ setup modal ============
-  function openSetup(){
-    $('setupUrl').value = CONFIG.url || '';
-    setSetupMsg('');
-    $('setupModal').classList.add('show');
-  }
-  function closeSetup(){ $('setupModal').classList.remove('show'); }
-  async function setupSave(){
-    var url = ($('setupUrl').value || '').trim();
-    if (!url) { setSetupMsg('請輸入 URL', '#dc2626'); return; }
-    if (url.indexOf('script.google.com') < 0) {
-      setSetupMsg('⚠ URL 不是 Apps Script Web App 網址', '#dc2626'); return;
-    }
-    if (/\/dev$/.test(url)) {
-      setSetupMsg('⚠ 此為 /dev 開發網址，請改用 /exec 結尾的正式網址', '#dc2626'); return;
-    }
-    if (!/\/exec$/.test(url)) {
-      setSetupMsg('⚠ URL 應以 /exec 結尾', '#dc2626'); return;
-    }
-    setSetupMsg('測試中…', '#92400e');
-    try {
-      var testUrl = url + '?author=' + encodeURIComponent(AUTHOR);
-      var res = await fetch(testUrl, { method:'GET', redirect:'follow' });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      var text = await res.text();
-      var json;
-      try { json = JSON.parse(text); }
-      catch(e){
-        if (text.indexOf('<html') >= 0) throw new Error('收到 HTML 而非 JSON，存取權可能未設為「知道連結的任何人」');
-        throw new Error('回應非 JSON');
-      }
-      if (!json.ok) throw new Error(json.error || '伺服器回覆 ok=false');
-      CONFIG.url = url; saveConfig();
-      setSetupMsg('✓ 連線成功', '#065f46');
-      setTimeout(function(){ closeSetup(); pullNow(); }, 600);
-    } catch(err){
-      var msg = err.message || String(err);
-      if (msg.indexOf('Failed to fetch') >= 0) {
-        msg = 'Failed to fetch — 通常代表：(1) URL 錯誤 (2) 存取權未設為「知道連結的任何人」 (3) 瀏覽器擴充功能擋下';
-      }
-      setSetupMsg('✗ ' + msg, '#dc2626');
-    }
-  }
-  function setupClear(){
-    if (!confirm('清除目前的雲端 URL？')) return;
-    CONFIG.url = ''; saveConfig();
-    showStatus('尚未設定雲端', 'info');
-    closeSetup();
-  }
-  function setupTest(){
-    var url = ($('setupUrl').value || '').trim();
-    if (!url) { setSetupMsg('請先貼上 URL', '#dc2626'); return; }
-    window.open(url + (url.indexOf('?')>=0?'&':'?') + 'author=' + encodeURIComponent(AUTHOR), '_blank');
-  }
-
   // ============ bind ============
   document.addEventListener('DOMContentLoaded', function(){
     $('btnSave').addEventListener('click', function(){ doSave('save', false); });
@@ -777,21 +683,9 @@
     $('btnReset').addEventListener('click', resetToday);
     $('btnReload').addEventListener('click', pullNow);
     $('btnExport').addEventListener('click', exportJson);
-    $('btnSetup').addEventListener('click', openSetup);
-    $('setupSave').addEventListener('click', setupSave);
-    $('setupCancel').addEventListener('click', closeSetup);
-    $('setupClear').addEventListener('click', setupClear);
-    $('setupTest').addEventListener('click', setupTest);
-    $('setupModal').addEventListener('click', function(e){ if (e.target === $('setupModal')) closeSetup(); });
 
     renderAll();
-    if (CONFIG.url) {
-      pullNow();
-    } else {
-      showStatus('尚未設定雲端，請點右上「設定雲端」', 'info');
-      // 首次進入引導
-      setTimeout(openSetup, 400);
-    }
+    pullNow();
   });
 })();
 </script>
