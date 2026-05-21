@@ -22,6 +22,28 @@
     background:#fafbfc; line-height:1.7;
   }
   .wrap { max-width:1360px; margin:0 auto; padding:24px 20px 80px; }
+  /* Login gate */
+  .login-gate {
+    position:fixed; inset:0; z-index:9999;
+    background:linear-gradient(135deg,var(--c-primary),#5a9bd2);
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .login-card {
+    background:#fff; padding:30px 36px; border-radius:14px;
+    box-shadow:0 12px 40px rgba(0,0,0,.2); width:min(380px,92vw);
+  }
+  .login-card h2 { margin:0 0 6px; color:var(--c-primary); text-align:center; font-size:22px; }
+  .login-card .login-sub { text-align:center; color:#64748b; font-size:13px; margin-bottom:22px; }
+  .login-field { margin-bottom:14px; }
+  .login-field label { display:block; font-size:13px; color:#475569; margin-bottom:5px; }
+  .login-field select, .login-field input[type=password] {
+    width:100%; padding:9px 12px; border:1px solid var(--c-line); border-radius:6px; font:inherit;
+  }
+  .login-field select:focus, .login-field input[type=password]:focus {
+    outline:none; border-color:var(--c-primary);
+  }
+  .login-msg { font-size:13px; color:#b42318; min-height:1.4em; margin-bottom:10px; }
+  .login-card .btn { width:100%; padding:10px; font-weight:600; }
   a { color:var(--c-primary); text-decoration:none; word-break:break-all; }
   a:hover { text-decoration:underline; }
   .page-nav {
@@ -291,7 +313,28 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/zh.js"></script>
 </head>
 <body>
-<div class="wrap">
+<div id="loginGate" class="login-gate">
+  <div class="login-card">
+    <h2>設計部 工作日報</h2>
+    <div class="login-sub">登入查看日報</div>
+    <div class="login-field">
+      <label for="loginUser">使用者</label>
+      <select id="loginUser">
+        <option value="Jimmy">Jimmy</option>
+        <option value="Joey">Joey</option>
+        <option value="Cat">Cat</option>
+        <option value="Mavis">Mavis</option>
+      </select>
+    </div>
+    <div class="login-field">
+      <label for="loginPass">密碼</label>
+      <input type="password" id="loginPass" autocomplete="current-password">
+    </div>
+    <div class="login-msg" id="loginMsg"></div>
+    <button class="btn primary" id="loginSubmit" type="button">登入</button>
+  </div>
+</div>
+<div class="wrap" id="mainWrap" style="display:none;">
 
 <nav class="page-nav" aria-label="分頁選單">
   <a href="Design_Department.html">案件安排</a>
@@ -319,6 +362,7 @@
     <button class="btn" id="btnReload" type="button">重新讀取</button>
     <button class="btn" id="btnForceSync" type="button">強制同步</button>
     <button class="btn" id="btnExport" type="button">匯出 JSON</button>
+    <button class="btn" id="btnLogout" type="button">登出</button>
   </div>
 </div>
 
@@ -382,6 +426,52 @@
     { key:'progress',   label:'進度',       cls:'num',    type:'text' },
     { key:'note',       label:'進度說明',   cls:'',       type:'text', multiline:true }
   ];
+
+  // === 登入驗證(僅前端 UX 守門,密碼可由 HTML 取得) ===
+  var PAGE_OWNER = AUTHOR;
+  var ADMIN = 'Jimmy';
+  var SESSION_KEY = 'workday_session';
+  var CREDENTIALS = {
+    Jimmy: 'jimmy2025',
+    Joey: 'joey2025',
+    Cat: 'cat2025',
+    Mavis: 'mavis2025'
+  };
+  function getSession(){
+    try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch(e){ return null; }
+  }
+  function setSession(user){ localStorage.setItem(SESSION_KEY, JSON.stringify({ user:user, loggedAt:Date.now() })); }
+  function clearSession(){ localStorage.removeItem(SESSION_KEY); }
+  function canAccessThisPage(user){ return user === ADMIN || user === PAGE_OWNER; }
+  function showLoginGate(msg){
+    var g = document.getElementById('loginGate'), w = document.getElementById('mainWrap');
+    if (g) g.style.display = 'flex';
+    if (w) w.style.display = 'none';
+    var m = document.getElementById('loginMsg'); if (m) m.textContent = msg || '';
+    var sel = document.getElementById('loginUser'); if (sel && !sel.value) sel.value = PAGE_OWNER;
+  }
+  function hideLoginGate(){
+    var g = document.getElementById('loginGate'), w = document.getElementById('mainWrap');
+    if (g) g.style.display = 'none';
+    if (w) w.style.display = '';
+    var m = document.getElementById('loginMsg'); if (m) m.textContent = '';
+  }
+  function attemptLogin(){
+    var u = document.getElementById('loginUser').value;
+    var p = document.getElementById('loginPass').value;
+    if (!u || !p) { document.getElementById('loginMsg').textContent = '請輸入使用者與密碼'; return; }
+    if (CREDENTIALS[u] !== p) { document.getElementById('loginMsg').textContent = '帳號或密碼錯誤'; return; }
+    if (!canAccessThisPage(u)) { document.getElementById('loginMsg').textContent = u + ' 沒有權限存取本頁'; return; }
+    setSession(u);
+    hideLoginGate();
+    renderAll();
+    pullNow();
+  }
+  function logout(){
+    if (!confirm('登出?')) return;
+    clearSession();
+    location.reload();
+  }
 
   // === 狀態 ===
   var REMOTE = loadCache();   // { "YYYY-MM-DD": { status, submittedAt, updatedAt, items:[] } }
@@ -955,9 +1045,18 @@
     $('btnReload').addEventListener('click', pullNow);
     $('btnForceSync').addEventListener('click', forceSync);
     $('btnExport').addEventListener('click', exportJson);
+    $('btnLogout').addEventListener('click', logout);
+    $('loginSubmit').addEventListener('click', attemptLogin);
+    $('loginPass').addEventListener('keypress', function(e){ if (e.key === 'Enter') attemptLogin(); });
 
-    renderAll();
-    pullNow();
+    var s = getSession();
+    if (s && canAccessThisPage(s.user)) {
+      hideLoginGate();
+      renderAll();
+      pullNow();
+    } else {
+      showLoginGate();
+    }
   });
 })();
 </script>

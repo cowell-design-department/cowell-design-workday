@@ -22,6 +22,28 @@
     background:#fafbfc; line-height:1.7;
   }
   .wrap { max-width:1360px; margin:0 auto; padding:24px 20px 80px; }
+  /* Login gate */
+  .login-gate {
+    position:fixed; inset:0; z-index:9999;
+    background:linear-gradient(135deg,var(--c-primary),#5a9bd2);
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .login-card {
+    background:#fff; padding:30px 36px; border-radius:14px;
+    box-shadow:0 12px 40px rgba(0,0,0,.2); width:min(380px,92vw);
+  }
+  .login-card h2 { margin:0 0 6px; color:var(--c-primary); text-align:center; font-size:22px; }
+  .login-card .login-sub { text-align:center; color:#64748b; font-size:13px; margin-bottom:22px; }
+  .login-field { margin-bottom:14px; }
+  .login-field label { display:block; font-size:13px; color:#475569; margin-bottom:5px; }
+  .login-field select, .login-field input[type=password] {
+    width:100%; padding:9px 12px; border:1px solid var(--c-line); border-radius:6px; font:inherit;
+  }
+  .login-field select:focus, .login-field input[type=password]:focus {
+    outline:none; border-color:var(--c-primary);
+  }
+  .login-msg { font-size:13px; color:#b42318; min-height:1.4em; margin-bottom:10px; }
+  .login-card .btn { width:100%; padding:10px; font-weight:600; }
   a { color:var(--c-primary); text-decoration:none; word-break:break-all; }
   a:hover { text-decoration:underline; }
   .page-nav {
@@ -357,20 +379,25 @@
     return '<table class="wd">' + colgroup + thead + '<tbody>' + body + '</tbody></table>';
   }
 
+  function yesterdayKey(){
+    var d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
   function renderOverview(){
-    var today = todayKey();
+    var key = yesterdayKey();
     var html = '';
     DESIGNERS.forEach(function(name){
       var data = DATA[name] || {};
-      var rec = data[today];
+      var rec = data[key];
       html += '<section class="card">';
       html += '<h2><span>' + escapeHtml(name) + '</span>' +
-              '<span class="card-meta">' + escapeHtml(formatDateLabel(today)) + '</span>' +
+              '<span class="card-meta">' + escapeHtml(formatDateLabel(key)) + '</span>' +
               badgeHtml(rec) + '</h2>';
       if (rec && rec.items && rec.items.length > 0) {
         html += renderTable(rec.items);
       } else {
-        html += '<div class="empty-msg">' + escapeHtml(name) + ' 今日尚未建立日報</div>';
+        html += '<div class="empty-msg">' + escapeHtml(name) + ' 前一日無日報</div>';
       }
       html += '</section>';
     });
