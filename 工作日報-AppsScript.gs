@@ -40,8 +40,8 @@ function getOrCreateSheet_() {
     const widths = [90, 70, 70, 60, 90, 160, 60, 90, 90, 90, 90, 70, 70, 60, 60, 240, 140, 140];
     widths.forEach((w, i) => sheet.setColumnWidth(i + 1, w));
   }
-  // 強制日期欄為純文字，避免被自動轉型
-  ['A:A', 'H:H', 'I:I', 'J:J', 'K:K'].forEach(r => sheet.getRange(r).setNumberFormat('@'));
+  // 強制日期/進度欄為純文字，避免被自動轉型(進度 200% 被轉成 2 等)
+  ['A:A', 'H:H', 'I:I', 'J:J', 'K:K', 'O:O'].forEach(r => sheet.getRange(r).setNumberFormat('@'));
   return sheet;
 }
 
@@ -197,25 +197,7 @@ function writeReport_(author, date, items, mode) {
   try {
     const sheet = getOrCreateSheet_();
 
-    // 檢查是否已送出（鎖定）
-    const last = sheet.getLastRow();
-    let existingSubmitted = false;
-    let existingSubmittedAt = '';
-    if (last >= 2) {
-      const data = sheet.getRange(2, 1, last - 1, HEADERS.length).getValues();
-      for (const row of data) {
-        if (normalizeDate_(row[0]) === normDate && String(row[1]) === author) {
-          if (String(row[2]) === 'submitted') {
-            existingSubmitted = true;
-            existingSubmittedAt = String(row[16] || '');
-            break;
-          }
-        }
-      }
-    }
-    if (existingSubmitted) {
-      throw new Error('此日報已於 ' + existingSubmittedAt + ' 送出並鎖定，無法再修改');
-    }
+    // 已送出的日報也可以重複編輯與重新送出(2026 改為開放重編)
 
     // 刪除舊資料
     deleteAuthorDate_(sheet, author, normDate);

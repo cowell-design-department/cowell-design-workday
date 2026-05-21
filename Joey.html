@@ -480,6 +480,8 @@
   var savingNow = false;
   var saveTimer = null;
   var pendingSave = false;
+  var editingHistoryDates = {};
+  var expandedHistoryDates = {};
 
   // ============ utils ============
   function $(id){ return document.getElementById(id); }
@@ -622,6 +624,16 @@
           body += '<tr class="item" data-idx="' + it._idx + '"' + (readonly ? '' : ' draggable="true"') + '>';
           COLUMNS.forEach(function(col){
             var val = it[col.key] == null ? '' : it[col.key];
+            if (col.key === 'progress' && val !== '' && val != null) {
+              var ps = String(val).trim();
+              var pn = parseFloat(ps.endsWith('%') ? ps.slice(0, -1) : ps);
+              if (!isNaN(pn)) {
+                if (pn > 0 && pn < 1) pn = Math.round(pn * 10000) / 100;
+                val = pn + '%';
+              } else {
+                val = ps.endsWith('%') ? ps : ps + '%';
+              }
+            }
             if (readonly) {
               body += '<td class="' + col.cls + (col.multiline ? ' multiline' : '') + '">' + escapeHtml(val) + '</td>';
             } else if (col.multiline) {
@@ -702,13 +714,23 @@
         persist();
       });
     });
-    // 進度欄:離開焦點時自動加 %
+    // 進度欄:離開焦點時自動正規化(0.99 → 99%, 99 → 99% 等)
     scope.querySelectorAll('input.cell-input[data-key="progress"]').forEach(function(inp){
       inp.addEventListener('blur', function(){
         var v = (inp.value || '').trim();
-        if (!v || v.endsWith('%')) return;
-        inp.value = v + '%';
-        inp.dispatchEvent(new Event('input', { bubbles: true }));
+        if (!v) return;
+        var n = parseFloat(v.endsWith('%') ? v.slice(0, -1) : v);
+        var newVal;
+        if (!isNaN(n)) {
+          if (n > 0 && n < 1) n = Math.round(n * 10000) / 100;
+          newVal = n + '%';
+        } else {
+          newVal = v.endsWith('%') ? v : v + '%';
+        }
+        if (newVal !== v) {
+          inp.value = newVal;
+          inp.dispatchEvent(new Event('input', { bubbles: true }));
+        }
       });
     });
     // textarea 自動長高
@@ -845,30 +867,57 @@
       var badge = rec.status === 'submitted'
         ? '<span class="status-badge submitted">已送出 ' + escapeHtml(rec.submittedAt || '') + '</span>'
         : '<span class="status-badge draft">草稿</span>';
-      var meta = rec.status === 'submitted'
-        ? '共 ' + (rec.items || []).length + ' 項'
-        : '共 ' + (rec.items || []).length + ' 項（未送出）';
-      var submitBtn = rec.status === 'submitted' ? '' :
-        '<button class="btn success h-submit-btn" type="button" data-act="submit-history">送出（鎖定）</button>';
-      return '<details class="history-item" data-date="' + escapeHtml(k) + '">' +
+      var isEditing = !!editingHistoryDates[k];
+      var isExpanded = isEditing || !!expandedHistoryDates[k];
+      var meta = '共 ' + (rec.items || []).length + ' 項';
+      var editBtn = '<button class="btn h-edit-btn" type="button" data-act="' + (isEditing ? 'finish-history' : 'edit-history') + '">' +
+        (isEditing ? '完成' : '修改') + '</button>';
+      var submitBtn = '<button class="btn success h-submit-btn" type="button" data-act="submit-history">' +
+        (rec.status === 'submitted' ? '重新送出' : '送出') + '</button>';
+      return '<details class="history-item' + (isEditing ? ' editing' : '') + '" data-date="' + escapeHtml(k) + '"' + (isExpanded ? ' open' : '') + '>' +
         '<summary><span class="h-date">' + escapeHtml(formatDateLabel(k)) + '</span>' + badge +
-        '<span class="h-meta">' + meta + '</span>' + submitBtn + '</summary>' +
-        '<div class="h-body">' + renderTable(rec.items || [], rec.status === 'submitted') + '</div>' +
+        '<span class="h-meta">' + meta + '</span>' + editBtn + submitBtn + '</summary>' +
+        '<div class="h-body">' + renderTable(rec.items || [], !isEditing) + '</div>' +
         '</details>';
     }).join('');
-    // 草稿狀態的歷史日報啟用編輯與送出
+    // 編輯狀態 → 啟用編輯;送出與修改/完成按鈕綁定
     holder.querySelectorAll('details.history-item').forEach(function(d){
       var dt = d.dataset.date;
       var rec = REMOTE[dt];
-      if (!rec || rec.status === 'submitted') return;
-      var body = d.querySelector('.h-body');
-      if (body) bindRowEvents(body, false, dt);
+      if (!rec) return;
+      d.addEventListener('toggle', function(){
+        if (d.open) expandedHistoryDates[dt] = true;
+        else delete expandedHistoryDates[dt];
+      });
+      if (editingHistoryDates[dt]) {
+        var body = d.querySelector('.h-body');
+        if (body) bindRowEvents(body, false, dt);
+      }
+      var ebtn = d.querySelector('[data-act="edit-history"]');
+      if (ebtn) {
+        ebtn.addEventListener('click', function(e){
+          e.preventDefault();
+          e.stopPropagation();
+          editingHistoryDates[dt] = true;
+          expandedHistoryDates[dt] = true;
+          renderHistory();
+        });
+      }
+      var fbtn = d.querySelector('[data-act="finish-history"]');
+      if (fbtn) {
+        fbtn.addEventListener('click', function(e){
+          e.preventDefault();
+          e.stopPropagation();
+          finishEditHistory(dt);
+        });
+      }
       var sbtn = d.querySelector('[data-act="submit-history"]');
       if (sbtn) {
         sbtn.addEventListener('click', function(e){
           e.preventDefault();
           e.stopPropagation();
-          if (!confirm('送出 ' + dt + ' 的日報？送出後將鎖定不可再修改。')) return;
+          var msg = rec.status === 'submitted' ? '重新送出 ' + dt + ' 的日報？' : '送出 ' + dt + ' 的日報？';
+          if (!confirm(msg)) return;
           submitHistoryDay(dt);
         });
       }
@@ -884,13 +933,13 @@
 
   var historyTimers = {};
   function scheduleHistorySave(date){
-    if (!REMOTE[date] || REMOTE[date].status === 'submitted') return;
+    if (!REMOTE[date]) return;
     showStatus('待暫存 ' + date + '…', 'busy');
     if (historyTimers[date]) clearTimeout(historyTimers[date]);
     historyTimers[date] = setTimeout(function(){ saveHistoryDay(date); }, 1200);
   }
   async function saveHistoryDay(date){
-    if (!REMOTE[date] || REMOTE[date].status === 'submitted') return;
+    if (!REMOTE[date]) return;
     showStatus('儲存 ' + date + ' 中…', 'busy');
     try {
       var res = await fetch(CLOUD_URL, {
@@ -911,7 +960,7 @@
     }
   }
   async function submitHistoryDay(date){
-    if (!REMOTE[date] || REMOTE[date].status === 'submitted') return;
+    if (!REMOTE[date]) return;
     if (historyTimers[date]) { clearTimeout(historyTimers[date]); delete historyTimers[date]; }
     showStatus('送出 ' + date + ' 中…', 'busy');
     try {
@@ -928,12 +977,22 @@
       var t = new Date();
       var hh = String(t.getHours()).padStart(2,'0'), mm = String(t.getMinutes()).padStart(2,'0');
       showStatus('已送出 ' + date + ' ' + hh + ':' + mm, 'ok');
+      delete editingHistoryDates[date];
       renderHistory();
-      alert('已送出並鎖定 ' + date);
+      alert('已送出 ' + date);
     } catch (err) {
       showStatus('送出 ' + date + ' 失敗:' + err.message, 'err');
       alert('送出 ' + date + ' 失敗:' + err.message);
     }
+  }
+  async function finishEditHistory(date){
+    if (historyTimers[date]) {
+      clearTimeout(historyTimers[date]);
+      delete historyTimers[date];
+    }
+    await saveHistoryDay(date);
+    delete editingHistoryDates[date];
+    renderHistory();
   }
 
   async function doSave(action, silent){

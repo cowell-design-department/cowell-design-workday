@@ -369,6 +369,16 @@
           body += '<tr class="item">';
           COLUMNS.forEach(function(col){
             var val = it[col.key] == null ? '' : it[col.key];
+            if (col.key === 'progress' && val !== '' && val != null) {
+              var ps = String(val).trim();
+              var pn = parseFloat(ps.endsWith('%') ? ps.slice(0, -1) : ps);
+              if (!isNaN(pn)) {
+                if (pn > 0 && pn < 1) pn = Math.round(pn * 10000) / 100;
+                val = pn + '%';
+              } else {
+                val = ps.endsWith('%') ? ps : ps + '%';
+              }
+            }
             body += '<td class="' + col.cls + (col.multiline ? ' multiline' : '') + '">' + escapeHtml(val) + '</td>';
           });
           body += '</tr>';
