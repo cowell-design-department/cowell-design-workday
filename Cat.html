@@ -556,12 +556,28 @@
       colgroup + thead + '<tbody>' + body + '</tbody></table>';
   }
 
-  function bindRowEvents(scope, readonly){
+  function bindRowEvents(scope, readonly, date){
     if (readonly) return;
+    function getItems(){ return date ? (REMOTE[date] && REMOTE[date].items) : todayItems; }
+    function persist(){
+      if (date) scheduleHistorySave(date);
+      else { saveDraft(); scheduleAutoSave(); }
+    }
+
     scope.querySelectorAll('button[data-act="add"]').forEach(function(btn){
       btn.addEventListener('click', function(e){
         e.stopPropagation();
-        addRow(btn.dataset.cat);
+        if (date) {
+          var items = getItems();
+          if (!items) return;
+          var blank = { category: btn.dataset.cat };
+          COLUMNS.forEach(function(c){ blank[c.key] = ''; });
+          items.push(blank);
+          scheduleHistorySave(date);
+          renderHistory();
+        } else {
+          addRow(btn.dataset.cat);
+        }
       });
     });
     scope.querySelectorAll('button[data-act="del"]').forEach(function(btn){
@@ -569,7 +585,16 @@
         var tr = btn.closest('tr.item');
         if (!tr) return;
         var idx = parseInt(tr.dataset.idx, 10);
-        delRow(idx);
+        if (date) {
+          var items = getItems();
+          if (!items || idx < 0 || idx >= items.length) return;
+          if (!confirm('刪除此列？')) return;
+          items.splice(idx, 1);
+          scheduleHistorySave(date);
+          renderHistory();
+        } else {
+          delRow(idx);
+        }
       });
     });
     scope.querySelectorAll('.cell-input').forEach(function(inp){
@@ -578,12 +603,21 @@
         if (!tr) return;
         var idx = parseInt(tr.dataset.idx, 10);
         var key = inp.dataset.key;
-        if (!todayItems[idx]) return;
+        var items = getItems();
+        if (!items || !items[idx]) return;
         var v = inp.value;
         if (inp.type === 'number') v = v === '' ? '' : Number(v);
-        todayItems[idx][key] = v;
-        saveDraft();
-        scheduleAutoSave();
+        items[idx][key] = v;
+        persist();
+      });
+    });
+    // 進度欄:離開焦點時自動加 %
+    scope.querySelectorAll('input.cell-input[data-key="progress"]').forEach(function(inp){
+      inp.addEventListener('blur', function(){
+        var v = (inp.value || '').trim();
+        if (!v || v.endsWith('%')) return;
+        inp.value = v + '%';
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
       });
     });
     // textarea 自動長高
@@ -603,14 +637,15 @@
           var tr = inp.closest('tr.item');
           if (!tr) return;
           var idx = parseInt(tr.dataset.idx, 10);
-          if (!todayItems[idx]) return;
-          todayItems[idx][inp.dataset.key] = dateStr;
-          saveDraft();
-          scheduleAutoSave();
+          var items = getItems();
+          if (!items || !items[idx]) return;
+          items[idx][inp.dataset.key] = dateStr;
+          persist();
         }
       });
     });
-    // 拖曳:同類別內重排序 + 跨類別移動
+    // 拖曳僅在今日表格啟用(歷史日報不支援拖曳)
+    if (date) return;
     scope.querySelectorAll('tr.item').forEach(function(tr){
       tr.addEventListener('dragstart', function(e){
         if (e.target.tagName === 'INPUT') { e.preventDefault(); return; }
@@ -723,12 +758,20 @@
       var meta = rec.status === 'submitted'
         ? '共 ' + (rec.items || []).length + ' 項'
         : '共 ' + (rec.items || []).length + ' 項（未送出）';
-      return '<details class="history-item">' +
+      return '<details class="history-item" data-date="' + escapeHtml(k) + '">' +
         '<summary><span class="h-date">' + escapeHtml(formatDateLabel(k)) + '</span>' + badge +
         '<span class="h-meta">' + meta + '</span></summary>' +
         '<div class="h-body">' + renderTable(rec.items || [], rec.status === 'submitted') + '</div>' +
         '</details>';
     }).join('');
+    // 草稿狀態的歷史日報啟用編輯
+    holder.querySelectorAll('details.history-item').forEach(function(d){
+      var dt = d.dataset.date;
+      var rec = REMOTE[dt];
+      if (!rec || rec.status === 'submitted') return;
+      var body = d.querySelector('.h-body');
+      if (body) bindRowEvents(body, false, dt);
+    });
   }
 
   // ============ cloud sync ============
@@ -736,6 +779,35 @@
     showStatus('待暫存…', 'busy');
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(function(){ doSave('save', true); }, 1200);
+  }
+
+  var historyTimers = {};
+  function scheduleHistorySave(date){
+    if (!REMOTE[date] || REMOTE[date].status === 'submitted') return;
+    showStatus('待暫存 ' + date + '…', 'busy');
+    if (historyTimers[date]) clearTimeout(historyTimers[date]);
+    historyTimers[date] = setTimeout(function(){ saveHistoryDay(date); }, 1200);
+  }
+  async function saveHistoryDay(date){
+    if (!REMOTE[date] || REMOTE[date].status === 'submitted') return;
+    showStatus('儲存 ' + date + ' 中…', 'busy');
+    try {
+      var res = await fetch(CLOUD_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action:'save', author:AUTHOR, date:date, items:REMOTE[date].items })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var json = await res.json();
+      if (!json.ok) throw new Error(json.error || '儲存失敗');
+      REMOTE = json.data || {};
+      saveCache();
+      var t = new Date();
+      var hh = String(t.getHours()).padStart(2,'0'), mm = String(t.getMinutes()).padStart(2,'0');
+      showStatus('已暫存 ' + date + ' ' + hh + ':' + mm, 'ok');
+    } catch (err) {
+      showStatus('儲存 ' + date + ' 失敗:' + err.message, 'err');
+    }
   }
 
   async function doSave(action, silent){
