@@ -563,6 +563,7 @@
       if (date) scheduleHistorySave(date);
       else { saveDraft(); scheduleAutoSave(); }
     }
+    function rerender(){ if (date) renderHistory(); else renderToday(); }
 
     scope.querySelectorAll('button[data-act="add"]').forEach(function(btn){
       btn.addEventListener('click', function(e){
@@ -644,8 +645,7 @@
         }
       });
     });
-    // 拖曳僅在今日表格啟用(歷史日報不支援拖曳)
-    if (date) return;
+    // 拖曳:同類別重排序 + 跨類別移動(今日與歷史草稿皆可)
     scope.querySelectorAll('tr.item').forEach(function(tr){
       tr.addEventListener('dragstart', function(e){
         if (e.target.tagName === 'INPUT') { e.preventDefault(); return; }
@@ -679,16 +679,16 @@
         var srcIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
         var targetIdx = parseInt(tr.dataset.idx, 10);
         if (isNaN(srcIdx) || isNaN(targetIdx) || srcIdx === targetIdx) return;
-        if (!todayItems[srcIdx] || !todayItems[targetIdx]) return;
-        var item = todayItems[srcIdx];
-        item.category = todayItems[targetIdx].category;
+        var items = getItems();
+        if (!items || !items[srcIdx] || !items[targetIdx]) return;
+        var item = items[srcIdx];
+        item.category = items[targetIdx].category;
         var insertIdx = targetIdx + (below ? 1 : 0);
-        todayItems.splice(srcIdx, 1);
+        items.splice(srcIdx, 1);
         if (srcIdx < insertIdx) insertIdx--;
-        todayItems.splice(insertIdx, 0, item);
-        saveDraft();
-        renderToday();
-        scheduleAutoSave();
+        items.splice(insertIdx, 0, item);
+        persist();
+        rerender();
       });
     });
     scope.querySelectorAll('tr.category-row').forEach(function(tr){
@@ -704,16 +704,16 @@
         e.preventDefault();
         tr.classList.remove('drop-target');
         var srcIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
-        if (isNaN(srcIdx) || !todayItems[srcIdx]) return;
+        var items = getItems();
+        if (!items || isNaN(srcIdx) || !items[srcIdx]) return;
         var newCat = null;
         CATEGORIES.forEach(function(c){ if (tr.classList.contains(c.cls)) newCat = c.key; });
-        if (!newCat || newCat === todayItems[srcIdx].category) return;
-        var item = todayItems.splice(srcIdx, 1)[0];
+        if (!newCat || newCat === items[srcIdx].category) return;
+        var item = items.splice(srcIdx, 1)[0];
         item.category = newCat;
-        todayItems.push(item);
-        saveDraft();
-        renderToday();
-        scheduleAutoSave();
+        items.push(item);
+        persist();
+        rerender();
       });
     });
   }
@@ -758,19 +758,30 @@
       var meta = rec.status === 'submitted'
         ? '共 ' + (rec.items || []).length + ' 項'
         : '共 ' + (rec.items || []).length + ' 項（未送出）';
+      var submitBtn = rec.status === 'submitted' ? '' :
+        '<button class="btn success h-submit-btn" type="button" data-act="submit-history">送出（鎖定）</button>';
       return '<details class="history-item" data-date="' + escapeHtml(k) + '">' +
         '<summary><span class="h-date">' + escapeHtml(formatDateLabel(k)) + '</span>' + badge +
-        '<span class="h-meta">' + meta + '</span></summary>' +
+        '<span class="h-meta">' + meta + '</span>' + submitBtn + '</summary>' +
         '<div class="h-body">' + renderTable(rec.items || [], rec.status === 'submitted') + '</div>' +
         '</details>';
     }).join('');
-    // 草稿狀態的歷史日報啟用編輯
+    // 草稿狀態的歷史日報啟用編輯與送出
     holder.querySelectorAll('details.history-item').forEach(function(d){
       var dt = d.dataset.date;
       var rec = REMOTE[dt];
       if (!rec || rec.status === 'submitted') return;
       var body = d.querySelector('.h-body');
       if (body) bindRowEvents(body, false, dt);
+      var sbtn = d.querySelector('[data-act="submit-history"]');
+      if (sbtn) {
+        sbtn.addEventListener('click', function(e){
+          e.preventDefault();
+          e.stopPropagation();
+          if (!confirm('送出 ' + dt + ' 的日報？送出後將鎖定不可再修改。')) return;
+          submitHistoryDay(dt);
+        });
+      }
     });
   }
 
@@ -807,6 +818,31 @@
       showStatus('已暫存 ' + date + ' ' + hh + ':' + mm, 'ok');
     } catch (err) {
       showStatus('儲存 ' + date + ' 失敗:' + err.message, 'err');
+    }
+  }
+  async function submitHistoryDay(date){
+    if (!REMOTE[date] || REMOTE[date].status === 'submitted') return;
+    if (historyTimers[date]) { clearTimeout(historyTimers[date]); delete historyTimers[date]; }
+    showStatus('送出 ' + date + ' 中…', 'busy');
+    try {
+      var res = await fetch(CLOUD_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action:'submit', author:AUTHOR, date:date, items:REMOTE[date].items })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var json = await res.json();
+      if (!json.ok) throw new Error(json.error || '送出失敗');
+      REMOTE = json.data || {};
+      saveCache();
+      var t = new Date();
+      var hh = String(t.getHours()).padStart(2,'0'), mm = String(t.getMinutes()).padStart(2,'0');
+      showStatus('已送出 ' + date + ' ' + hh + ':' + mm, 'ok');
+      renderHistory();
+      alert('已送出並鎖定 ' + date);
+    } catch (err) {
+      showStatus('送出 ' + date + ' 失敗:' + err.message, 'err');
+      alert('送出 ' + date + ' 失敗:' + err.message);
     }
   }
 
